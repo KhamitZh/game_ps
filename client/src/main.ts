@@ -4,6 +4,7 @@ import type { ClientMsg, ErrorCode, Phase, PhaseInfo, PublicPlayer, QuestionView
 import type { RoomId } from '../../shared/src/map';
 import { sfx, unlockAudio } from './audio/sfx';
 import { wsUrl } from './config';
+import { errorAction, type Stage } from './errorRouting';
 import { bootWorld, type WorldCallbacks, type WorldScene } from './game/WorldScene';
 import { getLang, onLangChange, t } from './i18n';
 import { getGameInfo } from './net/api';
@@ -19,12 +20,9 @@ import { toast } from './ui/toast';
 import { mountTopBar } from './ui/topbar';
 import { TouchControls, isTouchDevice } from './ui/touch';
 
-type Stage = 'home' | 'name' | 'char' | 'connecting' | 'game' | 'results';
 type Prompt = 'interact' | 'stairsLocked' | null;
 
 const SESSION_KEY = 'kh.session';
-const NAME_ERRORS: ErrorCode[] = ['NAME_TAKEN', 'NAME_INVALID'];
-const INTERACT_ERRORS: ErrorCode[] = ['NOT_NEAR', 'ALREADY_ANSWERED', 'FLOOR_LOCKED', 'NO_QUESTION', 'WRONG_PHASE', 'BAD_REQUEST'];
 const RESULT_SHOW_MS = 1400;
 const PENDING_TIMEOUT_MS = 3000;
 
@@ -338,32 +336,32 @@ function onEnded(ranking: RankedPlayer[]): void {
 }
 
 function onError(code: ErrorCode): void {
-  if (code === 'BAD_TOKEN' || code === 'PIN_NOT_FOUND') {
-    clearSession();
-    if (app.stage === 'game' || app.stage === 'results') {
+  const action = errorAction(app.stage, code);
+  if (code === 'BAD_TOKEN' || code === 'PIN_NOT_FOUND') clearSession();
+  switch (action) {
+    case 'ignore':
+      return;
+    case 'reload':
       location.reload();
       return;
-    }
-    app.conn?.close();
-    app.conn = null;
-    return go('home', code);
+    case 'home':
+    case 'name':
+    case 'char':
+      app.conn?.close();
+      app.conn = null;
+      return go(action, code);
+    case 'toastCloseQuestion':
+      clearTimeout(app.pendingTimer);
+      setFreeze('pending', false);
+      if (ui.modal.isOpen) {
+        ui.modal.close();
+        setFreeze('question', false);
+      }
+      toast(t(`error.${code}`), 'bad');
+      return;
+    case 'toast':
+      toast(t(`error.${code}`), 'bad');
   }
-  if (app.stage !== 'game') {
-    app.conn?.close();
-    app.conn = null;
-    if (NAME_ERRORS.includes(code)) return go('name', code);
-    if (code === 'BAD_CHARACTER') return go('char', code);
-    return go('home', code);
-  }
-  if (INTERACT_ERRORS.includes(code)) {
-    clearTimeout(app.pendingTimer);
-    setFreeze('pending', false);
-    if (ui.modal.isOpen) {
-      ui.modal.close();
-      setFreeze('question', false);
-    }
-  }
-  toast(t(`error.${code}`), 'bad');
 }
 
 // ---------- world callbacks & touch ----------
