@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page, type WebSocketRoute } from '@playwright/test';
 
 const PASSWORD = process.env.HOST_PASSWORD ?? 'dev-password';
 
@@ -75,6 +75,47 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
     await expect(p.locator('.myplace')).toBeVisible();
   }
   await expect(page.locator('.podium')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('a locked question modal is cleared after a reconnect', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'desktop only');
+  const errors: string[] = [];
+  const pin = await hostCreates(page);
+
+  const p = await context.newPage();
+  watchErrors(p, errors);
+  const routes: WebSocketRoute[] = [];
+  let dropAnswers = false;
+  await p.routeWebSocket(/\/ws\/\d{6}$/, (ws) => {
+    routes.push(ws);
+    const server = ws.connectToServer();
+    ws.onMessage((m) => {
+      if (dropAnswers && String(m).includes('"answer"')) return;
+      server.send(m);
+    });
+  });
+  await p.goto(`/?pin=${pin}`);
+  await p.locator('form button[type=submit]').click();
+  await p.locator('#name').fill('Net');
+  await p.locator('form button[type=submit]').click();
+  await p.locator('.char').nth(1).click();
+  await p.locator('#join').click();
+  await expect(p.locator('#lobbybar')).toBeVisible();
+
+  await page.locator('#start').click();
+  await expect(p.locator('#hud')).toBeVisible({ timeout: 10_000 });
+
+  routes.at(-1)!.send(JSON.stringify({ t: 'question', question: { roomId: 'f1r1', q: 'Test?', options: ['a', 'b', 'c', 'd'] } }));
+  await expect(p.locator('#modal')).toBeVisible();
+  dropAnswers = true;
+  await p.locator('.q-opt').first().click();
+  await expect(p.locator('.q-close')).toBeDisabled();
+  dropAnswers = false;
+
+  await routes.at(-1)!.close({ code: 1011, reason: 'network blip' });
+  await expect(p.locator('#modal')).toBeHidden({ timeout: 10_000 });
+  await expect(p.locator('#hud')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
