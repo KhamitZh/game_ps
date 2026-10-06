@@ -5,3 +5,5 @@ dist/
 .env*
 .claude/worktrees/
 .superpowers/
+test-results/
+playwright-report/

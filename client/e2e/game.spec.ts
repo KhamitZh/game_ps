@@ -1,0 +1,90 @@
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+
+const PASSWORD = process.env.HOST_PASSWORD ?? 'dev-password';
+
+function watchErrors(page: Page, sink: string[]): void {
+  page.on('pageerror', (e) => sink.push(e.message));
+}
+
+async function hostCreates(page: Page): Promise<string> {
+  await page.goto('/host.html');
+  await page.locator('#pw').fill(PASSWORD);
+  await page.locator('#tl').fill('5');
+  await page.locator('form button[type=submit]').click();
+  const pinEl = page.locator('.pin');
+  await expect(pinEl).toHaveText(/^\d{6}$/);
+  return (await pinEl.textContent())!.trim();
+}
+
+async function startJoin(ctx: BrowserContext, pin: string, name: string, char: number, errors: string[]): Promise<Page> {
+  const page = await ctx.newPage();
+  watchErrors(page, errors);
+  await page.goto(`/?pin=${pin}`);
+  await page.locator('form button[type=submit]').click();
+  await page.locator('#name').fill(name);
+  await page.locator('form button[type=submit]').click();
+  await page.locator('.char').nth(char).click();
+  await page.locator('#join').click();
+  return page;
+}
+
+async function join(ctx: BrowserContext, pin: string, name: string, char: number, errors: string[]): Promise<Page> {
+  const page = await startJoin(ctx, pin, name, char, errors);
+  await expect(page.locator('#lobbybar')).toBeVisible();
+  return page;
+}
+
+test('full round: join, start, play, reload, stop, results', async ({ page, context }) => {
+  const errors: string[] = [];
+  watchErrors(page, errors);
+  const pin = await hostCreates(page);
+
+  const p1 = await join(context, pin, 'Аян', 0, errors);
+  const p2 = await join(context, pin, 'Bota', 5, errors);
+  await expect(page.locator('#rows tr')).toHaveCount(2);
+
+  // Review Focus 4: same Cyrillic name, other case
+  const dup = await startJoin(context, pin, 'аЯН', 2, errors);
+  await expect(dup.locator('#name')).toBeVisible();
+  await expect(dup.locator('.error')).not.toBeEmpty();
+  await dup.close();
+
+  await page.locator('#start').click();
+  await expect(p1.locator('#hud')).toBeVisible({ timeout: 10_000 });
+  await expect(p1.locator('#hud')).toContainText('0/10');
+
+  await p1.bringToFront();
+  await p1.keyboard.down('ArrowRight');
+  await p1.waitForTimeout(500);
+  await p1.keyboard.up('ArrowRight');
+
+  // Review Focus 2: player reload keeps the game
+  await p2.reload();
+  await expect(p2.locator('#hud')).toBeVisible({ timeout: 10_000 });
+  await expect(p2.locator('#screen')).toBeEmpty();
+
+  // Review Focus 3: host reload keeps the dashboard
+  await page.reload();
+  await expect(page.locator('.pin')).toHaveText(pin);
+  await expect(page.locator('#rows tr')).toHaveCount(2);
+
+  page.once('dialog', (d) => d.accept());
+  await page.locator('#stop').click();
+  for (const p of [p1, p2]) {
+    await expect(p.locator('.results')).toBeVisible();
+    await expect(p.locator('.myplace')).toBeVisible();
+  }
+  await expect(page.locator('.podium')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('touch controls fit on a phone', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'mobile only');
+  const errors: string[] = [];
+  const pin = await hostCreates(page);
+  const p = await join(context, pin, 'Phone', 3, errors);
+  await expect(p.locator('#touch .joy')).toBeInViewport();
+  await expect(p.locator('#touch .act')).toBeInViewport();
+  await expect(p.locator('#topbar')).toBeInViewport();
+  expect(errors).toEqual([]);
+});
