@@ -2,7 +2,7 @@ import {
   CHARACTER_COUNT, COUNTDOWN_MS, MAX_PLAYERS, NAME_MAX, ROOMS_PER_FLOOR, SPEED, TOTAL_ROOMS, type Lang,
 } from '../../shared/src/constants';
 import {
-  FLOOR_SPAWN, MAPS, ROOMS, STAIRS_ARRIVAL, moveAllowed, nearPedestal, onStairs,
+  FLOOR_SPAWN, MAPS, ROOMS, STAIRS_ARRIVAL, nearPedestal, onStairs, pathClear,
   type FloorId, type Point, type RoomId,
 } from '../../shared/src/map';
 import { rank, type RankedPlayer } from '../../shared/src/ranking';
@@ -24,6 +24,8 @@ export interface PlayerState {
   character: number;
   lang: Lang;
   online: boolean;
+  /** When the player last went offline; null while online. */
+  offlineSince: number | null;
   status: PlayerStatus;
   floor: FloorId;
   x: number;
@@ -62,6 +64,10 @@ const fail = (code: ErrorCode): Fail => ({ ok: false, code });
 
 /** Server never measures a move over less than this, so bunched packets are not punished. */
 const MIN_MOVE_DT_MS = 100;
+/** Idle time does not bank movement budget: a standing player cannot teleport later. */
+const MAX_MOVE_DT_MS = 250;
+/** A playing player only counts as gone for the "everyone finished" rule after this long offline. */
+export const OFFLINE_GRACE_MS = 30_000;
 const MOVE_SLACK = 1.5;
 const MOVE_SLACK_PX = 4;
 
@@ -88,7 +94,7 @@ export class Game {
     g.startedAt = d.startedAt;
     g.endsAt = d.endsAt;
     g.endedAt = d.endedAt;
-    for (const p of d.players) g.players.set(p.id, { ...p, online: false, moving: false });
+    for (const p of d.players) g.players.set(p.id, { ...p, online: false, offlineSince: deps.now(), moving: false });
     return g;
   }
 
@@ -125,6 +131,7 @@ export class Game {
       character,
       lang,
       online: true,
+      offlineSince: null,
       status: 'lobby',
       floor: 'lobby',
       x: pos.x,
@@ -152,6 +159,7 @@ export class Game {
     const p = this.players.get(id);
     if (!p) return;
     p.online = online;
+    p.offlineSince = online ? null : this.deps.now();
     if (!online) p.moving = false;
     p.lastMoveAt = this.deps.now();
     this.checkAllDone();
@@ -184,6 +192,10 @@ export class Game {
       this.end();
       return true;
     }
+    if (this.phase === 'PLAYING') {
+      this.checkAllDone();
+      if ((this.phase as Phase) === 'ENDED') return true;
+    }
     return false;
   }
 
@@ -207,8 +219,11 @@ export class Game {
   private checkAllDone(): void {
     if (this.phase !== 'PLAYING') return;
     const all = [...this.players.values()];
-    const activeOnline = all.filter((p) => p.status === 'playing' && p.online);
-    if (activeOnline.length === 0 && all.some((p) => p.status === 'finished')) this.end();
+    const now = this.deps.now();
+    const stillPlaying = all.filter(
+      (p) => p.status === 'playing' && (p.online || p.offlineSince === null || now - p.offlineSince < OFFLINE_GRACE_MS),
+    );
+    if (stillPlaying.length === 0 && all.some((p) => p.status === 'finished')) this.end();
   }
 
   // ---------- actions ----------
@@ -218,12 +233,12 @@ export class Game {
     const p = this.players.get(id);
     if (!p || this.phase === 'COUNTDOWN' || this.phase === 'ENDED') return null;
     const now = this.deps.now();
-    const dt = Math.max(now - p.lastMoveAt, MIN_MOVE_DT_MS);
+    const dt = Math.min(Math.max(now - p.lastMoveAt, MIN_MOVE_DT_MS), MAX_MOVE_DT_MS);
     const maxDist = (SPEED * dt * MOVE_SLACK) / 1000 + MOVE_SLACK_PX;
     const valid =
       Number.isFinite(x) && Number.isFinite(y) &&
       Math.hypot(x - p.x, y - p.y) <= maxDist &&
-      moveAllowed(MAPS[p.floor], { x: p.x, y: p.y }, { x, y }, this.answeredSet(p));
+      pathClear(MAPS[p.floor], { x: p.x, y: p.y }, { x, y }, this.answeredSet(p));
     if (!valid) return { ok: false, fix: { floor: p.floor, x: p.x, y: p.y } };
     Object.assign(p, { x, y, dir, moving, lastMoveAt: now });
     return { ok: true };

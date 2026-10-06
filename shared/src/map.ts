@@ -140,6 +140,25 @@ export function moveAllowed(map: GameMap, from: Point, to: Point, answered: Read
   return true;
 }
 
+const PATH_STEP_PX = 8;
+
+/**
+ * Server-side check for a whole move segment: the feet point may not cross a blocking tile
+ * or enter an answered room anywhere along the way, and the destination must pass moveAllowed.
+ */
+export function pathClear(map: GameMap, from: Point, to: Point, answered: ReadonlySet<RoomId>): boolean {
+  const steps = Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / PATH_STEP_PX);
+  const startRoom = roomAt(map, from.x, from.y)?.id;
+  for (let i = 1; i < steps; i++) {
+    const x = from.x + ((to.x - from.x) * i) / steps;
+    const y = from.y + ((to.y - from.y) * i) / steps;
+    if (isBlockingTile(tileAt(map, Math.floor(x / TILE), Math.floor(y / TILE)))) return false;
+    const room = roomAt(map, x, y);
+    if (room && answered.has(room.id) && room.id !== startRoom) return false;
+  }
+  return moveAllowed(map, from, to, answered);
+}
+
 export function nearPedestal(room: RoomDef, x: number, y: number): boolean {
   const c = tileCenter(room.pedestal.x, room.pedestal.y);
   return Math.hypot(x - c.x, y - c.y) <= INTERACT_RADIUS;

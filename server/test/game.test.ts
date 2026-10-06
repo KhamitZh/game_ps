@@ -179,6 +179,29 @@ describe('movement', () => {
     expect(g.move(p.id, 26, c.y, 'left', true)).toMatchObject({ ok: false });
   });
 
+  it('rejects a long jump to a pedestal after standing still', () => {
+    const g = newGame();
+    const p = join(g, 'A');
+    startPlaying(g);
+    clock += 10_000;
+    const room = ROOMS.f1r2;
+    const target = tileCenter(room.pedestal.x, room.pedestal.y + 1);
+    expect(g.move(p.id, target.x, target.y, 'up', true)).toMatchObject({ ok: false });
+    expect(g.interact(p.id, 'f1r2')).toEqual({ ok: false, code: 'NOT_NEAR' });
+  });
+
+  it('rejects a move that passes through a one-tile wall', () => {
+    const g = newGame();
+    const p = join(g, 'A');
+    startPlaying(g);
+    const hall = tileCenter(3, 8);
+    p.x = hall.x;
+    p.y = hall.y;
+    clock += 250;
+    const inside = tileCenter(3, 6);
+    expect(g.move(p.id, inside.x, inside.y, 'up', true)).toMatchObject({ ok: false });
+  });
+
   it('ignores moves during the countdown', () => {
     const g = newGame();
     const p = join(g, 'A');
@@ -324,7 +347,7 @@ describe('finishing and ranking', () => {
     expect(g.phase).toBe('ENDED');
   });
 
-  it('keeps playing while another online player is still playing, ends when they go offline', () => {
+  it('keeps playing while another player is playing, and through a short disconnect', () => {
     const g = newGame();
     const a = join(g, 'A');
     const b = join(g, 'B');
@@ -332,6 +355,25 @@ describe('finishing and ranking', () => {
     for (const id of ROOM_IDS) solve(g, a.id, id);
     expect(g.phase).toBe('PLAYING');
     g.setOnline(b.id, false);
+    expect(g.phase).toBe('PLAYING');
+    clock += 10_000;
+    g.setOnline(b.id, true);
+    clock += 60_000;
+    expect(g.tick()).toBe(false);
+    expect(g.phase).toBe('PLAYING');
+  });
+
+  it('ends once the last playing player has been offline for the grace period', () => {
+    const g = newGame();
+    const a = join(g, 'A');
+    const b = join(g, 'B');
+    startPlaying(g);
+    for (const id of ROOM_IDS) solve(g, a.id, id);
+    g.setOnline(b.id, false);
+    clock += 29_999;
+    expect(g.tick()).toBe(false);
+    clock += 1;
+    expect(g.tick()).toBe(true);
     expect(g.phase).toBe('ENDED');
   });
 
