@@ -27,13 +27,27 @@ cd client && npx playwright test # browser e2e (starts both dev servers)
 ## Edit questions
 
 Questions are grouped by **level** (one subject module per level). The host picks the level when creating a game.
-Level ids and their titles in three languages live in `shared/src/levels.ts`:
+Level ids, subtopics and their titles in three languages live in `shared/src/levels.ts`:
 `numsys`, `database`, `excel`, `python`, `html`, `css`, `js`, `computer`, `networks`, `grade11`.
 
-Edit `server/questions.json`: every level id needs **10–30** questions
-`{ "q": "...", "options": ["A", "B", "C", "D"], "correct": 0 }` (`correct` is the index 0–3). Each player gets a
-different question from the level's pool in every one of the 10 rooms, with shuffled options. Use `\n` in `q` for
-multi-line code. Run `npm test` to validate, then redeploy the server.
+Some levels (now: Python) are split into **subtopics**, and each of their questions has a **difficulty**
+(`easy`, `medium`, `hard`). For those levels the host also picks a subtopic (or "all subtopics") and a difficulty.
+
+`server/questions.json` is generated — edit `server/scripts/build_questions.py` and run
+
+```bash
+python3 server/scripts/build_questions.py server/questions.json
+```
+
+The generator executes every code snippet and checks the marked answer against the real output.
+Rules (checked at server start and by `npm test`):
+- a flat level: **10–30** questions `{ "q": "...", "options": ["A", "B", "C", "D"], "correct": 0 }`;
+- a level with subtopics: an object with exactly the subtopic ids from `shared/src/levels.ts`, every question
+  tagged with `"difficulty"`, and at least **10** questions per subtopic × difficulty;
+- every question: non-empty text, 4 different options, `correct` 0–3, no duplicate text within a level.
+
+Each player gets a different question from the game's pool in every one of the 10 rooms, with shuffled options.
+Use `\n` in `q` for multi-line code. Run `npm test` to validate, then redeploy the server.
 
 ## Deploy
 

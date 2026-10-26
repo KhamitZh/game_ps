@@ -53,9 +53,11 @@ const post = (body) =>
 check((await (await fetch(BASE)).text()).includes('OK'), 'server answers on /');
 check((await post({ password: 'wrong', timeLimitMin: 5 })).status === 403, 'wrong host password is rejected');
 
-const created = await (await post({ password: PASSWORD, timeLimitMin: 5, level: 'python' })).json();
+const bad = await post({ password: PASSWORD, timeLimitMin: 5, level: 'python' });
+check(bad.status === 400 && (await bad.json()).error === 'BAD_SELECTION', 'python without subtopic is rejected');
+const created = await (await post({ password: PASSWORD, timeLimitMin: 5, level: 'python', subtopic: 'conditions', difficulty: 'hard' })).json();
 check(/^\d{6}$/.test(created.pin) && created.hostToken, `game created with PIN ${created.pin}`);
-check(created.level === 'python', 'game is created on the requested level');
+check(created.level === 'python' && created.subtopic === 'conditions' && created.difficulty === 'hard', 'game is created on the requested selection');
 const { pin, hostToken } = created;
 
 const info = await (await fetch(`${BASE}/api/game/${pin}`)).json();
@@ -64,7 +66,9 @@ check(info.exists && info.phase === 'LOBBY' && info.count === 0, 'game info show
 const host = new Client(pin);
 await host.opened;
 host.send({ t: 'host', hostToken });
-check((await host.wait((m) => m.t === 'hostWelcome')).pin === pin, 'host connects with token');
+const welcome = await host.wait((m) => m.t === 'hostWelcome');
+check(welcome.pin === pin, 'host connects with token');
+check(welcome.subtopic === 'conditions' && welcome.difficulty === 'hard', 'hostWelcome carries the selection');
 
 const alice = new Client(pin);
 await alice.opened;
