@@ -295,6 +295,7 @@ export class Game {
       p.assigned[roomId] = a;
     }
     const q = pool[a.qIndex];
+    if (!q) return fail('NO_QUESTION');
     return { ok: true, question: { roomId, q: q.q, options: a.order.map((i) => q.options[i]) } };
   }
 

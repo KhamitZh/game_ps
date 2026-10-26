@@ -506,4 +506,15 @@ describe('persistence', () => {
     expect(g2.selection).toEqual({ level: 'python', subtopic: null, difficulty: null });
     expect(g2.answer(p.id, ROOM_IDS[1], 0)).toEqual({ ok: false, code: 'NO_QUESTION' });
   });
+
+  it('refuses to open a room whose stored question no longer exists instead of throwing', () => {
+    const g = newGame(10, { level: 'python', subtopic: 'conditions', difficulty: 'hard' });
+    const p = join(g, 'Aru');
+    startPlaying(g);
+    const data = JSON.parse(JSON.stringify(g.toData()));
+    data.players[0].assigned[ROOM_IDS[0]] = { qIndex: 9999, order: [0, 1, 2, 3] };
+    const g2 = Game.fromData(data, BANK, deps());
+    standAt(g2, p.id, ROOM_IDS[0]);
+    expect(g2.interact(p.id, ROOM_IDS[0])).toEqual({ ok: false, code: 'NO_QUESTION' });
+  });
 });
