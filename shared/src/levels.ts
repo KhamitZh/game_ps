@@ -27,3 +27,58 @@ export const LEVEL_TITLES: Record<LevelId, Record<Lang, string>> = {
 export function isLevelId(v: unknown): v is LevelId {
   return typeof v === 'string' && (LEVEL_IDS as readonly string[]).includes(v);
 }
+
+export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
+export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
+
+export const DIFFICULTY_TITLES: Record<Difficulty, Record<Lang, string>> = {
+  easy: { kk: 'Жеңіл', ru: 'Лёгкий', en: 'Easy' },
+  medium: { kk: 'Орташа', ru: 'Средний', en: 'Medium' },
+  hard: { kk: 'Қиын', ru: 'Сложный', en: 'Hard' },
+};
+
+/** Picks every subtopic of the level at once. */
+export const ALL_SUBTOPICS = 'all';
+
+/** Subtopic ids and titles of the levels split into subtopics; key order is the display order. */
+export const SUBTOPICS: Partial<Record<LevelId, Record<string, Record<Lang, string>>>> = {
+  python: {
+    basics: { kk: 'Айнымалылар және амалдар', ru: 'Переменные и операции', en: 'Variables and operators' },
+    conditions: { kk: 'Шарттар', ru: 'Условия', en: 'Conditions' },
+    loops: { kk: 'Циклдар', ru: 'Циклы', en: 'Loops' },
+    strings: { kk: 'Жолдар', ru: 'Строки', en: 'Strings' },
+    lists: { kk: 'Тізімдер (массивтер)', ru: 'Списки (массивы)', en: 'Lists (arrays)' },
+    functions: { kk: 'Функциялар', ru: 'Функции', en: 'Functions' },
+  },
+};
+
+export function subtopicIds(level: LevelId): string[] {
+  return Object.keys(SUBTOPICS[level] ?? {});
+}
+
+export function hasSubtopics(level: LevelId): boolean {
+  return subtopicIds(level).length > 0;
+}
+
+export function isSubtopic(level: LevelId, v: unknown): v is string {
+  return typeof v === 'string' && hasSubtopics(level) && (v === ALL_SUBTOPICS || subtopicIds(level).includes(v));
+}
+
+export function isDifficulty(v: unknown): v is Difficulty {
+  return typeof v === 'string' && (DIFFICULTIES as readonly string[]).includes(v);
+}
+
+/** What a game draws its questions from. Levels without subtopics carry nulls. */
+export interface PoolSelection {
+  level: LevelId;
+  subtopic: string | null;
+  difficulty: Difficulty | null;
+}
+
+/** null means the request did not name a valid subtopic and difficulty for a level that needs them. */
+export function resolveSelection(level: LevelId, subtopic: unknown, difficulty: unknown): PoolSelection | null {
+  if (!hasSubtopics(level)) return { level, subtopic: null, difficulty: null };
+  if (!isSubtopic(level, subtopic) || !isDifficulty(difficulty)) return null;
+  return { level, subtopic, difficulty };
+}
