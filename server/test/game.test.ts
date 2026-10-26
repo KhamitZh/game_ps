@@ -1,15 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { COUNTDOWN_MS } from '../../shared/src/constants';
-import { LEVEL_IDS } from '../../shared/src/levels';
+import { LEVEL_IDS, type PoolSelection } from '../../shared/src/levels';
 import { MAPS, ROOMS, ROOM_IDS, STAIRS_ARRIVAL, tileCenter, type RoomId } from '../../shared/src/map';
 import { Game, type GameDeps } from '../src/game';
-import type { QuestionBank } from '../src/questions';
+import { selectPool, type QuestionBank } from '../src/questions';
 
 /** Exactly one question per room, so a full run must use every question once. */
 const POOL = ROOM_IDS.map((_, i) => ({ q: `q${i}`, options: [`o${i}a`, `o${i}b`, `o${i}c`, `o${i}d`], correct: i % 4 }));
-const BANK = Object.fromEntries(
-  LEVEL_IDS.map((id) => [id, id === 'python' ? POOL.map((x) => ({ ...x, q: `py-${x.q}` })) : POOL]),
-) as QuestionBank;
+const tag = (d: 'easy' | 'medium' | 'hard', prefix: string) =>
+  POOL.map((x) => ({ ...x, q: `${prefix}-${x.q}`, difficulty: d }));
+const PY = {
+  basics: [...tag('easy', 'b-e'), ...tag('medium', 'b-m'), ...tag('hard', 'b-h')],
+  conditions: [...tag('easy', 'c-e'), ...tag('medium', 'c-m'), ...tag('hard', 'c-h')],
+  loops: [], strings: [], lists: [], functions: [],
+};
+const BANK = Object.fromEntries(LEVEL_IDS.map((id) => [id, id === 'python' ? PY : POOL])) as QuestionBank;
 
 let clock: number;
 let seq: number;
@@ -19,7 +24,8 @@ const deps = (): GameDeps => ({
   rng: () => (rngValues.length ? rngValues.shift()! : 0.5),
   newId: () => `id${++seq}`,
 });
-const newGame = (limitMin = 10) => new Game('123456', 'host-token', limitMin, 'numsys', BANK, deps());
+const NUMSYS: PoolSelection = { level: 'numsys', subtopic: null, difficulty: null };
+const newGame = (limitMin = 10, sel: PoolSelection = NUMSYS) => new Game('123456', 'host-token', limitMin, sel, BANK, deps());
 
 function join(g: Game, name: string) {
   const r = g.addPlayer(name, 0, 'kk');
@@ -42,7 +48,7 @@ function standAt(g: Game, id: string, roomId: RoomId) {
 }
 function displayedCorrect(g: Game, id: string, roomId: RoomId) {
   const a = g.players.get(id)!.assigned[roomId]!;
-  return a.order.indexOf(POOL[a.qIndex].correct);
+  return a.order.indexOf(selectPool(BANK, g.selection)[a.qIndex].correct);
 }
 function solve(g: Game, id: string, roomId: RoomId, correct = true) {
   standAt(g, id, roomId);
@@ -261,14 +267,34 @@ describe('questions', () => {
     expect(p.keys).toBe(ROOM_IDS.length);
   });
 
-  it('draws questions from the level the game was created with', () => {
-    const g = new Game('123456', 'host-token', 10, 'python', BANK, deps());
-    const p = join(g, 'A');
+  it('draws questions only from the selected subtopic and difficulty', () => {
+    const g = newGame(10, { level: 'python', subtopic: 'conditions', difficulty: 'hard' });
+    const p = join(g, 'Aru');
     startPlaying(g);
-    standAt(g, p.id, 'f1r1');
-    const r = g.interact(p.id, 'f1r1');
-    if (!r.ok) throw new Error(r.code);
-    expect(r.question.q).toMatch(/^py-/);
+    for (const roomId of ROOM_IDS) {
+      standAt(g, p.id, roomId);
+      const r = g.interact(p.id, roomId);
+      if (!r.ok) throw new Error(r.code);
+      expect(r.question.q.startsWith('c-h-'), r.question.q).toBe(true);
+      expect(solve(g, p.id, roomId).ok).toBe(true);
+    }
+    expect(g.players.get(p.id)!.keys).toBe(ROOM_IDS.length);
+  });
+
+  it('draws from every subtopic for "all"', () => {
+    const g = newGame(10, { level: 'python', subtopic: 'all', difficulty: 'easy' });
+    const p = join(g, 'Aru');
+    startPlaying(g);
+    const draw = (roomId: RoomId, r: number) => {
+      rngValues = [r];
+      standAt(g, p.id, roomId);
+      const q = g.interact(p.id, roomId);
+      if (!q.ok) throw new Error(q.code);
+      return q.question.q;
+    };
+    // The pool is basics/easy followed by conditions/easy: its first and last entries come from different subtopics.
+    expect(draw(ROOM_IDS[0], 0)).toBe('b-e-q0');
+    expect(draw(ROOM_IDS[1], 0.99)).toBe('c-e-q9');
   });
 
   it('keeps the same question and order on repeated interaction', () => {
@@ -458,5 +484,26 @@ describe('persistence', () => {
     standAt(g2, p.id, 'f1r1');
     expect(g2.interact(p.id, 'f1r1')).toEqual(q);
     expect(MAPS.f1.rooms).toHaveLength(5);
+  });
+
+  it('round-trips the selection through toData/fromData', () => {
+    const sel: PoolSelection = { level: 'python', subtopic: 'conditions', difficulty: 'medium' };
+    const g2 = Game.fromData(JSON.parse(JSON.stringify(newGame(10, sel).toData())), BANK, deps());
+    expect(g2.selection).toEqual(sel);
+    expect(g2.level).toBe('python');
+  });
+
+  it('keeps a game stored before subtopics existed playable', () => {
+    const g = newGame(10, { level: 'python', subtopic: 'conditions', difficulty: 'hard' });
+    const p = join(g, 'Aru');
+    startPlaying(g);
+    expect(solve(g, p.id, ROOM_IDS[0]).ok).toBe(true);
+    const data = JSON.parse(JSON.stringify(g.toData()));
+    delete data.subtopic;
+    delete data.difficulty;
+    data.players[0].assigned[ROOM_IDS[1]] = { qIndex: 9999, order: [0, 1, 2, 3] };
+    const g2 = Game.fromData(data, BANK, deps());
+    expect(g2.selection).toEqual({ level: 'python', subtopic: null, difficulty: null });
+    expect(g2.answer(p.id, ROOM_IDS[1], 0)).toEqual({ ok: false, code: 'NO_QUESTION' });
   });
 });

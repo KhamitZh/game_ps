@@ -61,6 +61,7 @@
   "error.NO_PLAYERS": "No players yet",
   "error.BAD_REQUEST": "Bad request",
   "error.BUSY": "The server is busy, try again",
+  "error.BAD_SELECTION": "Choose a subtopic and difficulty",
   "error.NETWORK": "Could not reach the server",
   "host.title": "Host panel",
   "host.password": "Password",

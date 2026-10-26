@@ -1,6 +1,6 @@
 import { LANGS, type Lang } from './constants';
 import { isRoomId, type FloorId, type RoomId } from './map';
-import type { LevelId } from './levels';
+import type { Difficulty, LevelId } from './levels';
 import type { RankedPlayer } from './ranking';
 
 export type Phase = 'LOBBY' | 'COUNTDOWN' | 'PLAYING' | 'ENDED';
@@ -11,7 +11,7 @@ export type AnswerMark = 'correct' | 'wrong';
 export const ERROR_CODES = [
   'PIN_NOT_FOUND', 'GAME_FULL', 'NAME_INVALID', 'NAME_TAKEN', 'BAD_CHARACTER', 'ALREADY_STARTED',
   'BAD_TOKEN', 'BAD_HOST_TOKEN', 'BAD_PASSWORD', 'WRONG_PHASE', 'NOT_NEAR', 'ALREADY_ANSWERED',
-  'FLOOR_LOCKED', 'NO_QUESTION', 'NO_PLAYERS', 'BAD_REQUEST', 'BUSY',
+  'FLOOR_LOCKED', 'NO_QUESTION', 'NO_PLAYERS', 'BAD_REQUEST', 'BUSY', 'BAD_SELECTION',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
@@ -67,7 +67,7 @@ export type ClientMsg =
 
 export type ServerMsg =
   | { t: 'welcome'; token: string; you: YouState; phase: PhaseInfo; roster: PublicPlayer[] }
-  | { t: 'hostWelcome'; pin: string; timeLimitMin: number; level: LevelId; phase: PhaseInfo; roster: PublicPlayer[]; ranking: RankedPlayer[] | null }
+  | { t: 'hostWelcome'; pin: string; timeLimitMin: number; level: LevelId; subtopic: string | null; difficulty: Difficulty | null; phase: PhaseInfo; roster: PublicPlayer[]; ranking: RankedPlayer[] | null }
   | { t: 'phase'; phase: PhaseInfo }
   | { t: 'roster'; players: PublicPlayer[] }
   | { t: 'you'; you: YouState }

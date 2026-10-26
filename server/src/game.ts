@@ -5,12 +5,12 @@ import {
   FLOOR_SPAWN, MAPS, ROOMS, STAIRS_ARRIVAL, nearPedestal, onStairs, pathClear,
   type FloorId, type Point, type RoomId,
 } from '../../shared/src/map';
-import { DEFAULT_LEVEL, type LevelId } from '../../shared/src/levels';
+import { DEFAULT_LEVEL, type Difficulty, type LevelId, type PoolSelection } from '../../shared/src/levels';
 import { rank, type RankedPlayer } from '../../shared/src/ranking';
 import type {
   AnswerMark, Dir, ErrorCode, Phase, PhaseInfo, PlayerStatus, PosEntry, PublicPlayer, QuestionView, YouState,
 } from '../../shared/src/protocol';
-import { selectPool, type QuestionBank } from './questions';
+import { selectPool, type Question, type QuestionBank } from './questions';
 
 export interface Assigned {
   /** Index into the level's question pool. */
@@ -48,6 +48,9 @@ export interface GameData {
   hostToken: string;
   timeLimitMin: number;
   level: LevelId;
+  /** Missing in games stored before subtopics existed. */
+  subtopic?: string | null;
+  difficulty?: Difficulty | null;
   phase: Phase;
   countdownEndsAt: number | null;
   startedAt: number | null;
@@ -81,18 +84,26 @@ export class Game {
   endsAt: number | null = null;
   endedAt: number | null = null;
   readonly players = new Map<string, PlayerState>();
+  private readonly pool: Question[];
 
   constructor(
     readonly pin: string,
     readonly hostToken: string,
     readonly timeLimitMin: number,
-    readonly level: LevelId,
-    private readonly questions: QuestionBank,
+    readonly selection: PoolSelection,
+    questions: QuestionBank,
     private readonly deps: GameDeps,
-  ) {}
+  ) {
+    this.pool = selectPool(questions, selection);
+  }
+
+  get level(): LevelId {
+    return this.selection.level;
+  }
 
   static fromData(d: GameData, questions: QuestionBank, deps: GameDeps): Game {
-    const g = new Game(d.pin, d.hostToken, d.timeLimitMin, d.level ?? DEFAULT_LEVEL, questions, deps);
+    const selection: PoolSelection = { level: d.level ?? DEFAULT_LEVEL, subtopic: d.subtopic ?? null, difficulty: d.difficulty ?? null };
+    const g = new Game(d.pin, d.hostToken, d.timeLimitMin, selection, questions, deps);
     g.phase = d.phase;
     g.countdownEndsAt = d.countdownEndsAt;
     g.startedAt = d.startedAt;
@@ -107,7 +118,9 @@ export class Game {
       pin: this.pin,
       hostToken: this.hostToken,
       timeLimitMin: this.timeLimitMin,
-      level: this.level,
+      level: this.selection.level,
+      subtopic: this.selection.subtopic,
+      difficulty: this.selection.difficulty,
       phase: this.phase,
       countdownEndsAt: this.countdownEndsAt,
       startedAt: this.startedAt,
@@ -270,7 +283,7 @@ export class Game {
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     if (room.floor === 'f2' && !this.floor2Unlocked(p)) return fail('FLOOR_LOCKED');
     if (room.floor !== p.floor || !nearPedestal(room, p.x, p.y)) return fail('NOT_NEAR');
-    const pool = selectPool(this.questions, { level: this.level, subtopic: null, difficulty: null });
+    const pool = this.pool;
     if (!pool?.length) return fail('NO_QUESTION');
     let a = p.assigned[roomId];
     if (!a) {
@@ -292,7 +305,7 @@ export class Game {
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     const a = p.assigned[roomId];
     if (!a) return fail('NO_QUESTION');
-    const q = selectPool(this.questions, { level: this.level, subtopic: null, difficulty: null })[a.qIndex];
+    const q = this.pool[a.qIndex];
     if (!q) return fail('NO_QUESTION');
     const correct = a.order[optionIndex] === q.correct;
     p.answered[roomId] = correct ? 'correct' : 'wrong';

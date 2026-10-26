@@ -1,7 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import questionsRaw from '../questions.json';
 import { MAX_PLAYERS, TICK_MS } from '../../shared/src/constants';
-import type { LevelId } from '../../shared/src/levels';
+import type { PoolSelection } from '../../shared/src/levels';
 import type { FloorId } from '../../shared/src/map';
 import { parseClientMsg, type ClientMsg, type ServerMsg } from '../../shared/src/protocol';
 import type { Env } from './env';
@@ -35,11 +35,11 @@ export class GameRoom extends DurableObject<Env> {
 
   // ---------- RPC from the Worker ----------
 
-  async init(opts: { pin: string; timeLimitMin: number; level: LevelId; hostToken: string }): Promise<boolean> {
+  async init(opts: { pin: string; timeLimitMin: number; selection: PoolSelection; hostToken: string }): Promise<boolean> {
     if (this.game && this.game.phase !== 'ENDED') return false;
     for (const ws of this.sessions.keys()) ws.close(1000, 'new game');
     this.sessions.clear();
-    this.game = new Game(opts.pin, opts.hostToken, opts.timeLimitMin, opts.level, QUESTIONS, this.deps);
+    this.game = new Game(opts.pin, opts.hostToken, opts.timeLimitMin, opts.selection, QUESTIONS, this.deps);
     await this.persist();
     await this.ctx.storage.setAlarm(Date.now() + opts.timeLimitMin * 60_000 + CLEANUP_AFTER_MS);
     return true;
@@ -130,7 +130,9 @@ export class GameRoom extends DurableObject<Env> {
           t: 'hostWelcome',
           pin: game.pin,
           timeLimitMin: game.timeLimitMin,
-          level: game.level,
+          level: game.selection.level,
+          subtopic: game.selection.subtopic,
+          difficulty: game.selection.difficulty,
           phase: game.phaseInfo(),
           roster: game.roster(),
           ranking: game.phase === 'ENDED' ? game.ranking() : null,

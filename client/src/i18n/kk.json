@@ -61,6 +61,7 @@
   "error.NO_PLAYERS": "Әзірге ойыншы жоқ",
   "error.BAD_REQUEST": "Қате сұраныс",
   "error.BUSY": "Сервер бос емес, қайталап көріңіз",
+  "error.BAD_SELECTION": "Бөлім мен қиындықты таңдаңыз",
   "error.NETWORK": "Серверге қосыла алмадық",
   "host.title": "Ұйымдастырушы панелі",
   "host.password": "Құпия сөз",

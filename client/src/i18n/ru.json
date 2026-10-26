@@ -61,6 +61,7 @@
   "error.NO_PLAYERS": "Пока нет игроков",
   "error.BAD_REQUEST": "Неверный запрос",
   "error.BUSY": "Сервер занят, попробуйте снова",
+  "error.BAD_SELECTION": "Выберите раздел и сложность",
   "error.NETWORK": "Не удалось связаться с сервером",
   "host.title": "Панель организатора",
   "host.password": "Пароль",
