@@ -49,15 +49,18 @@
 ```ts
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
+export const DEFAULT_DIFFICULTY: Difficulty = 'easy';
 export const ALL_SUBTOPICS = 'all';
-export const SUBTOPICS: Partial<Record<LevelId, readonly string[]>> = {
-  python: ['basics', 'conditions', 'loops', 'strings', 'lists', 'functions'],
+/** Бөлім id-лері мен атаулары бір жерде; объект кілттерінің реті = UI-дағы рет. */
+export const SUBTOPICS: Partial<Record<LevelId, Record<string, Record<Lang, string>>>> = {
+  python: { basics: {...}, conditions: {...}, loops: {...}, strings: {...}, lists: {...}, functions: {...} },
 };
-export const SUBTOPIC_TITLES: Record<string, Record<Lang, string>>; // жоғарыдағы кесте
 export const DIFFICULTY_TITLES: Record<Difficulty, Record<Lang, string>>;
+export function subtopicIds(level: LevelId): string[];
 export function hasSubtopics(level: LevelId): boolean;
 export function isSubtopic(level: LevelId, v: unknown): v is string; // `all` те жарамды
 export function isDifficulty(v: unknown): v is Difficulty;
+export function resolveSelection(level: LevelId, subtopic: unknown, difficulty: unknown): PoolSelection | null;
 ```
 
 Таңдау түрі:
@@ -73,7 +76,7 @@ export interface PoolSelection {
 ## 2. Валидатор (`validateQuestions`)
 
 - `SUBTOPICS`-та бар тақырып (python) **міндетті түрде** бөлімдер нысаны болуы керек; онда:
-  - тек `SUBTOPICS[level]` ішіндегі кілттер (белгісіз бөлім → қате; жетіспейтін бөлім → қате);
+  - тек `subtopicIds(level)` ішіндегі кілттер (белгісіз бөлім → қате; жетіспейтін бөлім → қате);
   - әр сұрақта `difficulty` ∈ `DIFFICULTIES` (әйтпесе қате);
   - әр бөлім × қиындық жұбында ≥ `MIN_LEVEL_QUESTIONS` (10) сұрақ;
   - бір тақырып ішінде (барлық бөлімдер бойынша) сұрақ мәтіні қайталанбайды;
@@ -93,17 +96,20 @@ export function selectPool(bank: QuestionBank, sel: PoolSelection): Question[]
 ```
 
 - Бөлімі жоқ тақырып → тақырыптың тізімі.
-- `subtopic === 'all'` → `SUBTOPICS[level]` ретімен бөлімдерді біріктіріп, `difficulty` бойынша сүзу.
+- `subtopic === 'all'` → `subtopicIds(level)` ретімен бөлімдерді біріктіріп, `difficulty` бойынша сүзу.
 - Нақты бөлім → сол бөлімді `difficulty` бойынша сүзу.
+- Бөлімді тақырыпта `subtopic === null` болса (жаңартуға дейін сақталған ойын) → барлық бөлімнің барлық
+  сұрағы. `answer` сақталған `qIndex` жиынтықтан тыс болса `NO_QUESTION` қайтарады, құламайды.
 - Ретті ешқашан араластырмайды (`filter`/`concat` ғана) — сақталған `qIndex` Durable Object қайта
   іске қосылғаннан кейін де дұрыс сұраққа сілтейді.
 
 ## 4. Сервер
 
-- `POST /api/games` денесі: `{ password, timeLimitMin, level, subtopic?, difficulty? }`.
+- `POST /api/create` денесі: `{ password, timeLimitMin, level, subtopic?, difficulty? }`.
   - `level` бұрынғыдай (жарамсыз → `DEFAULT_LEVEL`).
   - `hasSubtopics(level)` болса: `subtopic` (`isSubtopic`) және `difficulty` (`isDifficulty`) міндетті,
-    жарамсыз/жоқ → `400 { error: 'BAD_SELECTION' }`. Үнсіз әдепкі мәнге ауыспайды.
+    жарамсыз/жоқ → `400 { error: 'BAD_SELECTION' }` (`resolveSelection` → `null`). Үнсіз әдепкі мәнге ауыспайды.
+    Тексеру құпия сөз тексерілгеннен кейін жасалады.
   - Бөлімі жоқ тақырыпта екеуі де `null` болып сақталады (жіберілгені ескерілмейді).
   - Жауап: `{ pin, hostToken, timeLimitMin, level, subtopic, difficulty }`.
 - `GameRoom.init` таңдауды алып, `Game`-ге береді.
@@ -128,7 +134,7 @@ export function selectPool(bank: QuestionBank, sel: PoolSelection): Question[]
 ```
 
 - `hasSubtopics(level)` жалған болса, «Бөлім» мен «Қиындық» жолдары `hidden`.
-- Бөлім тізімі: бірінші «Барлық бөлімдер», сосын `SUBTOPICS[level]` ретімен; әдепкі — «Барлық бөлімдер».
+- Бөлім тізімі: бірінші «Барлық бөлімдер», сосын `subtopicIds(level)` ретімен; әдепкі — «Барлық бөлімдер».
 - Қиындық: `<input type="radio" name="diff">`, CSS арқылы батырма түрінде.
 - Таңдау `localStorage`-та сақталмайды.
 - Панель тақырыбы: `Python › Шарттар › Қиын` (бөлімі жоқ тақырыпта тек тақырып атауы).
@@ -137,7 +143,7 @@ export function selectPool(bank: QuestionBank, sel: PoolSelection): Question[]
 
 ## 7. Сұрақтар (180)
 
-- `build_questions.py` генераторымен; код сұрақтарының жауабы Python-да орындалып тексеріледі,
+- Генератор репоға көшіріледі: `server/scripts/build_questions.py` (келесі тақырыптар үшін де керек); код сұрақтарының жауабы Python-да орындалып тексеріледі,
   есептеу сұрақтары есептеліп тексеріледі.
 - Қиындық критерийлері:
   - **Жеңіл** — бір ұғым, 1–3 жол код (мыс. `7 // 2`).
