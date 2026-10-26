@@ -212,6 +212,14 @@ async function onWelcome(m: Extract<ServerMsg, { t: 'welcome' }>): Promise<void>
     go('game');
     setupTouch();
   }
+  // A request sent just before the drop may never be answered: unblock the player.
+  // The room stays open on the server, so walking up to the key again brings the same question back.
+  clearTimeout(app.pendingTimer);
+  setFreeze('pending', false);
+  if (ui.modal.isLocked) {
+    ui.modal.close();
+    setFreeze('question', false);
+  }
   world.setRoster(app.roster);
   world.setYou(app.you!);
   spectateBar.setRoster(app.roster);

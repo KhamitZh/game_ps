@@ -14,6 +14,11 @@ export class QuestionModal {
     return !this.root.hidden;
   }
 
+  /** An answer was picked and the modal is waiting for the server's verdict. */
+  get isLocked(): boolean {
+    return this.isOpen && this.locked;
+  }
+
   open(q: QuestionView, onAnswer: (i: number) => void, onClose: () => void): void {
     this.close();
     this.locked = false;
