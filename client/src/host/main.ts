@@ -1,6 +1,9 @@
 import '../ui/styles.css';
 import { DEFAULT_TIME_LIMIT_MIN, MAX_TIME_LIMIT_MIN, MIN_TIME_LIMIT_MIN } from '../../../shared/src/constants';
-import { DEFAULT_LEVEL, LEVEL_IDS, LEVEL_TITLES, type LevelId } from '../../../shared/src/levels';
+import {
+  ALL_SUBTOPICS, DEFAULT_DIFFICULTY, DEFAULT_LEVEL, DIFFICULTIES, DIFFICULTY_TITLES, LEVEL_IDS, LEVEL_TITLES, SUBTOPICS,
+  hasSubtopics, subtopicIds, type Difficulty, type LevelId, type PoolSelection,
+} from '../../../shared/src/levels';
 import type { PhaseInfo, PublicPlayer, ServerMsg } from '../../../shared/src/protocol';
 import { rank, type RankedPlayer } from '../../../shared/src/ranking';
 import { characterPreview } from '../art/characters';
@@ -22,7 +25,12 @@ const s = {
   pin: '',
   hostToken: '',
   timeLimitMin: DEFAULT_TIME_LIMIT_MIN,
+  /** Form choices; kept here so a re-render (language switch, error) shows the same choices. */
   level: DEFAULT_LEVEL as LevelId,
+  subtopic: ALL_SUBTOPICS as string,
+  difficulty: DEFAULT_DIFFICULTY as Difficulty,
+  /** What the running game was created with (from hostWelcome). */
+  game: { level: DEFAULT_LEVEL, subtopic: null, difficulty: null } as PoolSelection,
   phase: null as PhaseInfo | null,
   offset: 0,
   roster: [] as PublicPlayer[],
@@ -58,6 +66,23 @@ function levelTitle(id: LevelId): string {
   return LEVEL_TITLES[id]?.[getLang()] ?? id;
 }
 
+function subtopicTitle(level: LevelId, id: string): string {
+  return id === ALL_SUBTOPICS ? t('host.allSubtopics') : SUBTOPICS[level]?.[id]?.[getLang()] ?? id;
+}
+
+function selectionTitle(sel: PoolSelection): string {
+  const parts = [levelTitle(sel.level)];
+  if (sel.subtopic) parts.push(subtopicTitle(sel.level, sel.subtopic));
+  if (sel.difficulty) parts.push(DIFFICULTY_TITLES[sel.difficulty][getLang()]);
+  return parts.join(' › ');
+}
+
+function subtopicOptions(level: LevelId): string {
+  return [ALL_SUBTOPICS, ...subtopicIds(level)]
+    .map((id) => `<option value="${id}"${id === s.subtopic ? ' selected' : ''}>${escapeHtml(subtopicTitle(level, id))}</option>`)
+    .join('');
+}
+
 function renderLogin(): void {
   s.view = 'login';
   root.innerHTML = `
@@ -73,23 +98,46 @@ function renderLogin(): void {
         <select id="lv" class="input">
           ${LEVEL_IDS.map((id, i) => `<option value="${id}"${id === s.level ? ' selected' : ''}>${i + 1}. ${escapeHtml(levelTitle(id))}</option>`).join('')}
         </select>
+        <div id="subRow" class="stack"${hasSubtopics(s.level) ? '' : ' hidden'}>
+          <label class="label" for="st">${t('host.subtopic')}</label>
+          <select id="st" class="input">${subtopicOptions(s.level)}</select>
+          <span class="label" id="diffLabel">${t('host.difficulty')}</span>
+          <div class="seg" role="radiogroup" aria-labelledby="diffLabel">
+            ${DIFFICULTIES.map((d) => `<label class="seg-opt"><input type="radio" name="diff" value="${d}"${d === s.difficulty ? ' checked' : ''} /><span>${escapeHtml(DIFFICULTY_TITLES[d][getLang()])}</span></label>`).join('')}
+          </div>
+        </div>
         <p class="error">${s.error ? t(`error.${s.error}`) : ''}</p>
         <button class="btn btn-gold" type="submit">${t('host.create')}</button>
       </form>
     </div>`;
   const form = root.querySelector('form')!;
+  const st = root.querySelector<HTMLSelectElement>('#st')!;
   root.querySelector<HTMLSelectElement>('#lv')!.addEventListener('change', (e) => {
     s.level = (e.target as HTMLSelectElement).value as LevelId;
+    s.subtopic = ALL_SUBTOPICS;
+    st.innerHTML = subtopicOptions(s.level);
+    root.querySelector<HTMLElement>('#subRow')!.hidden = !hasSubtopics(s.level);
   });
+  st.addEventListener('change', () => {
+    s.subtopic = st.value;
+  });
+  for (const r of root.querySelectorAll<HTMLInputElement>('input[name=diff]')) {
+    r.addEventListener('change', () => {
+      if (r.checked) s.difficulty = r.value as Difficulty;
+    });
+  }
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const pw = root.querySelector<HTMLInputElement>('#pw')!.value;
     const tl = Number(root.querySelector<HTMLInputElement>('#tl')!.value) || DEFAULT_TIME_LIMIT_MIN;
     s.timeLimitMin = Math.min(MAX_TIME_LIMIT_MIN, Math.max(MIN_TIME_LIMIT_MIN, Math.round(tl)));
     s.level = root.querySelector<HTMLSelectElement>('#lv')!.value as LevelId;
+    const selection: PoolSelection = hasSubtopics(s.level)
+      ? { level: s.level, subtopic: s.subtopic, difficulty: s.difficulty }
+      : { level: s.level, subtopic: null, difficulty: null };
     form.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled = true;
     try {
-      const r = await createGame(pw, s.timeLimitMin, s.level);
+      const r = await createGame(pw, s.timeLimitMin, selection);
       if (!r.ok) {
         s.error = r.code;
         return renderLogin();
@@ -97,7 +145,7 @@ function renderLogin(): void {
       s.pin = r.pin;
       s.hostToken = r.hostToken;
       s.timeLimitMin = r.timeLimitMin;
-      s.level = r.level;
+      s.game = r.selection;
       s.error = '';
       save();
       connect();
@@ -138,7 +186,7 @@ function onMessage(m: ServerMsg): void {
   switch (m.t) {
     case 'hostWelcome':
       s.timeLimitMin = m.timeLimitMin;
-      s.level = m.level;
+      s.game = { level: m.level, subtopic: m.subtopic, difficulty: m.difficulty };
       s.roster = m.roster;
       s.ranking = m.ranking;
       setPhase(m.phase);
@@ -197,7 +245,7 @@ function renderDash(): void {
           <div class="label">${t('host.pinLabel')}</div>
           <div class="pin">${s.pin}</div>
           <div class="label">${t('host.joinAt', { url: escapeHtml(joinUrl) })}</div>
-          <div class="label">${t('host.level')}: <b>${escapeHtml(levelTitle(s.level))}</b></div>
+          <div class="label">${t('host.level')}: <b>${escapeHtml(selectionTitle(s.game))}</b></div>
         </div>
         <div class="stack" style="justify-items:end">
           <div class="label"><span>${t(`host.phase.${ph}`)}</span> · <span id="count"></span></div>

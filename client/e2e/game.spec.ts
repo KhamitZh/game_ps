@@ -11,10 +11,12 @@ async function hostCreates(page: Page): Promise<string> {
   await page.locator('#pw').fill(PASSWORD);
   await page.locator('#tl').fill('5');
   await page.locator('#lv').selectOption('python');
+  await page.locator('#st').selectOption('conditions');
+  await page.locator('.seg-opt', { has: page.locator('input[value=hard]') }).click();
   await page.locator('form button[type=submit]').click();
   const pinEl = page.locator('.pin');
   await expect(pinEl).toHaveText(/^\d{6}$/);
-  await expect(page.locator('.host-head')).toContainText('Python');
+  await expect(page.locator('.host-head')).toContainText('Python › Шарттар › Қиын');
   return (await pinEl.textContent())!.trim();
 }
 
@@ -35,6 +37,31 @@ async function join(ctx: BrowserContext, pin: string, name: string, char: number
   await expect(page.locator('#lobbybar')).toBeVisible();
   return page;
 }
+
+test('host picker shows subtopics only for split topics and keeps choices', async ({ page }) => {
+  await page.goto('/host.html');
+  const row = page.locator('#subRow');
+  await page.locator('#lv').selectOption('html');
+  await expect(row).toBeHidden();
+  await page.locator('#lv').selectOption('python');
+  await expect(row).toBeVisible();
+  await expect(page.locator('#st option')).toHaveCount(7);
+  await page.locator('#st').selectOption('loops');
+  await page.locator('.seg-opt', { has: page.locator('input[value=medium]') }).click();
+
+  // Switching topic resets the subtopic but keeps the difficulty.
+  await page.locator('#lv').selectOption('html');
+  await page.locator('#lv').selectOption('python');
+  await expect(page.locator('#st')).toHaveValue('all');
+  await expect(page.locator('input[name=diff][value=medium]')).toBeChecked();
+
+  // A language switch (top bar chip «Рус») re-renders the form with the same choices.
+  await page.locator('#st').selectOption('loops');
+  await page.locator('#topbar .chip', { hasText: 'Рус' }).click();
+  await expect(page.locator('label[for=st]')).toHaveText('Раздел');
+  await expect(page.locator('#st')).toHaveValue('loops');
+  await expect(page.locator('input[name=diff][value=medium]')).toBeChecked();
+});
 
 test('full round: join, start, play, reload, stop, results', async ({ page, context }) => {
   const errors: string[] = [];
