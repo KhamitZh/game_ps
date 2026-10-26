@@ -274,7 +274,7 @@ L['python'] = {
         P('medium', 's = "abcdef"\nprint(s[1:6:2])', ['bdf', 'ace', 'bcd', 'bcdef']),
         P('medium', 'print("-".join(["a", "b", "c"]))', ['a-b-c', 'abc', '-a-b-c', 'a-b-c-']),
         P('medium', 's = "level"\nprint(s == s[::-1])', ['True', 'False', 'level', 'Қате']),
-        P('medium', 'print("  ok  ".strip() + "!")', ['ok!', 'ok  !', ' ok!', '  ok!']),
+        P('medium', 'print("  ok  ".strip() + "!")', ['ok!', 'ok  !', 'ok !', 'ok']),
 
         P('hard', 's = "Python"\nprint(s[::-2])', ['nhy', 'nohtyP', 'Pto', 'yhn']),
         P('hard', 's = "abc"\ns[0] = "x"\nprint(s)', ['xbc', 'abc', 'x', 'Қате']),
@@ -598,7 +598,7 @@ def run_py(code):
 
 def build_item(where, item, difficulty=None):
     q, opts, correct = item[0], item[1], item[2]
-    if len(opts) != 4 or len(set(opts)) != 4:
+    if len(opts) != 4 or len({o.strip() for o in opts}) != 4:
         errors.append(f'{where}: bad options: {q}')
     if len(item) > 3:
         kind, payload = item[3]

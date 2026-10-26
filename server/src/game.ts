@@ -10,7 +10,7 @@ import { rank, type RankedPlayer } from '../../shared/src/ranking';
 import type {
   AnswerMark, Dir, ErrorCode, Phase, PhaseInfo, PlayerStatus, PosEntry, PublicPlayer, QuestionView, YouState,
 } from '../../shared/src/protocol';
-import type { QuestionBank } from './questions';
+import { selectPool, type QuestionBank } from './questions';
 
 export interface Assigned {
   /** Index into the level's question pool. */
@@ -270,7 +270,7 @@ export class Game {
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     if (room.floor === 'f2' && !this.floor2Unlocked(p)) return fail('FLOOR_LOCKED');
     if (room.floor !== p.floor || !nearPedestal(room, p.x, p.y)) return fail('NOT_NEAR');
-    const pool = this.questions[this.level];
+    const pool = selectPool(this.questions, { level: this.level, subtopic: null, difficulty: null });
     if (!pool?.length) return fail('NO_QUESTION');
     let a = p.assigned[roomId];
     if (!a) {
@@ -292,7 +292,9 @@ export class Game {
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     const a = p.assigned[roomId];
     if (!a) return fail('NO_QUESTION');
-    const correct = a.order[optionIndex] === this.questions[this.level][a.qIndex].correct;
+    const q = selectPool(this.questions, { level: this.level, subtopic: null, difficulty: null })[a.qIndex];
+    if (!q) return fail('NO_QUESTION');
+    const correct = a.order[optionIndex] === q.correct;
     p.answered[roomId] = correct ? 'correct' : 'wrong';
     p.rooms += 1;
     if (correct) {

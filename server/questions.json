@@ -665,248 +665,2000 @@
       "correct": 1
     }
   ],
-  "python": [
-    {
-      "q": "Программа нені шығарады?\nprint(7 // 2)",
-      "options": [
-        "3.5",
-        "3",
-        "4",
-        "1"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\nprint(17 % 5)",
-      "options": [
-        "3",
-        "2",
-        "3.4",
-        "12"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\nprint(2 ** 4)",
-      "options": [
-        "8",
-        "6",
-        "16",
-        "24"
-      ],
-      "correct": 2
-    },
-    {
-      "q": "input() функциясы қандай типтегі мән қайтарады?",
-      "options": [
-        "int (бүтін сан)",
-        "str (жол)",
-        "float (нақты сан)",
-        "bool (логикалық)"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\nx = 5\nx += 3\nprint(x)",
-      "options": [
-        "5",
-        "3",
-        "8",
-        "53"
-      ],
-      "correct": 2
-    },
-    {
-      "q": "Программа нені шығарады?\nfor i in range(3):\n    print(i, end=\" \")",
-      "options": [
-        "1 2 3",
-        "0 1 2",
-        "0 1 2 3",
-        "3"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "list(range(2, 10, 3)) нәтижесі:",
-      "options": [
-        "[2, 5, 8]",
-        "[2, 3, 4]",
-        "[2, 5, 8, 11]",
-        "[3, 6, 9]"
-      ],
-      "correct": 0
-    },
-    {
-      "q": "Программа нені шығарады?\ns = \"Python\"\nprint(s[1])",
-      "options": [
-        "P",
-        "y",
-        "t",
-        "Py"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\nprint(len(\"Сәлем\"))",
-      "options": [
-        "4",
-        "5",
-        "6",
-        "10"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\nprint(\"ab\" * 3)",
-      "options": [
-        "ab3",
-        "ababab",
-        "aaabbb",
-        "Қате"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\na = [3, 1, 2]\na.sort()\nprint(a)",
-      "options": [
-        "[3, 1, 2]",
-        "[1, 2, 3]",
-        "[3, 2, 1]",
-        "None"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\na = [10, 20, 30]\nprint(a[-1])",
-      "options": [
-        "10",
-        "20",
-        "30",
-        "Қате"
-      ],
-      "correct": 2
-    },
-    {
-      "q": "Программа нені шығарады?\nx = 15\nif x > 20:\n    print(\"A\")\nelif x > 10:\n    print(\"B\")\nelse:\n    print(\"C\")",
-      "options": [
-        "A",
-        "B",
-        "C",
-        "BC"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\ni, s = 1, 0\nwhile i <= 4:\n    s += i\n    i += 1\nprint(s)",
-      "options": [
-        "4",
-        "6",
-        "10",
-        "15"
-      ],
-      "correct": 2
-    },
-    {
-      "q": "Программа нені шығарады?\nfor i in range(10):\n    if i == 3:\n        break\n    print(i, end=\" \")",
-      "options": [
-        "0 1 2",
-        "0 1 2 3",
-        "3",
-        "0 1 2 4 5 6 7 8 9"
-      ],
-      "correct": 0
-    },
-    {
-      "q": "Программа нені шығарады?\nfor i in range(5):\n    if i % 2 == 0:\n        continue\n    print(i, end=\" \")",
-      "options": [
-        "0 2 4",
-        "1 3",
-        "1 3 5",
-        "0 1 2 3 4"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\ndef f(a, b=2):\n    return a * b\nprint(f(3))",
-      "options": [
-        "3",
-        "5",
-        "6",
-        "Қате"
-      ],
-      "correct": 2
-    },
-    {
-      "q": "Python-да функция қай кілттік сөзбен анықталады?",
-      "options": [
-        "function",
-        "def",
-        "func",
-        "procedure"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\ns = \"информатика\"\nprint(s.count(\"а\"))",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "11"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Файлды тек оқу үшін ашатын режим:",
-      "options": [
-        "\"w\"",
-        "\"a\"",
-        "\"r\"",
-        "\"x\""
-      ],
-      "correct": 2
-    },
-    {
-      "q": "Программа нені шығарады?\nm = [[1, 2], [3, 4]]\nprint(m[1][0])",
-      "options": [
-        "1",
-        "2",
-        "3",
-        "4"
-      ],
-      "correct": 2
-    },
-    {
-      "q": "Программа нені шығарады?\nprint(\"12\" + \"3\")",
-      "options": [
-        "15",
-        "123",
-        "12 3",
-        "Қате"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Программа нені шығарады?\nprint(5 > 3 and 2 > 4)",
-      "options": [
-        "True",
-        "False",
-        "1",
-        "None"
-      ],
-      "correct": 1
-    },
-    {
-      "q": "Python-да бір жолдық түсініктеме (комментарий) қай таңбадан басталады?",
-      "options": [
-        "//",
-        "#",
-        "--",
-        "/*"
-      ],
-      "correct": 1
-    }
-  ],
+  "python": {
+    "basics": [
+      {
+        "q": "Программа нені шығарады?\nprint(7 // 2)",
+        "options": [
+          "3.5",
+          "3",
+          "4",
+          "1"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(17 % 5)",
+        "options": [
+          "3",
+          "2",
+          "3.4",
+          "12"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(2 ** 4)",
+        "options": [
+          "8",
+          "6",
+          "16",
+          "24"
+        ],
+        "correct": 2,
+        "difficulty": "easy"
+      },
+      {
+        "q": "input() функциясы қандай типтегі мән қайтарады?",
+        "options": [
+          "int (бүтін сан)",
+          "str (жол)",
+          "float (нақты сан)",
+          "bool (логикалық)"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 5\nx += 3\nprint(x)",
+        "options": [
+          "5",
+          "3",
+          "8",
+          "53"
+        ],
+        "correct": 2,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Python-да бір жолдық түсініктеме (комментарий) қай таңбадан басталады?",
+        "options": [
+          "//",
+          "#",
+          "--",
+          "/*"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(10 / 4)",
+        "options": [
+          "2",
+          "2.5",
+          "2.0",
+          "3"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(int(\"7\") + 1)",
+        "options": [
+          "8",
+          "71",
+          "7 1",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Қай айнымалы аты Python-да дұрыс емес?",
+        "options": [
+          "my_var",
+          "_x",
+          "2name",
+          "name2"
+        ],
+        "correct": 2,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"12\" + \"3\")",
+        "options": [
+          "15",
+          "123",
+          "12 3",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = 7\nb = 2\nprint(a // b, a % b)",
+        "options": [
+          "3 1",
+          "3.5 1",
+          "1 3",
+          "3 0"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 3\ny = x\nx = x + 2\nprint(x, y)",
+        "options": [
+          "5 5",
+          "5 3",
+          "3 5",
+          "3 3"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(2 + 3 * 4 ** 2 // 8)",
+        "options": [
+          "8",
+          "10",
+          "62",
+          "6.0"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na, b = 4, 9\na, b = b, a\nprint(a - b)",
+        "options": [
+          "5",
+          "-5",
+          "0",
+          "13"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(float(\"3\") * 2)",
+        "options": [
+          "6",
+          "6.0",
+          "33",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(str(5) * 3)",
+        "options": [
+          "15",
+          "555",
+          "5 5 5",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 10\nx //= 3\nx **= 2\nprint(x)",
+        "options": [
+          "9",
+          "11.1",
+          "100",
+          "6"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(len(str(2 ** 10)))",
+        "options": [
+          "4",
+          "10",
+          "1024",
+          "3"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "x = input() жолында пайдаланушы 5 енгізді. print(x * 2) нені шығарады?",
+        "options": [
+          "10",
+          "55",
+          "5 5",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(9 % 4 + 9 // 4)",
+        "options": [
+          "3",
+          "4.25",
+          "5",
+          "2"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(int(7.9) + round(2.5))",
+        "options": [
+          "10",
+          "9",
+          "9.9",
+          "11"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(-7 // 2)",
+        "options": [
+          "-3",
+          "-4",
+          "-3.5",
+          "3"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(-7 % 3)",
+        "options": [
+          "-1",
+          "2",
+          "1",
+          "-2"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(2 ** 3 ** 2)",
+        "options": [
+          "64",
+          "512",
+          "36",
+          "12"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(0.1 + 0.2 == 0.3)",
+        "options": [
+          "True",
+          "False",
+          "0.3",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = \"5\"\ny = 2\nprint(x * y + str(y))",
+        "options": [
+          "12",
+          "552",
+          "10",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(int(\"10\", 2) + int(\"10\", 8))",
+        "options": [
+          "20",
+          "10",
+          "12",
+          "1010"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"5\" + 5)",
+        "options": [
+          "55",
+          "10",
+          "5 5",
+          "Қате"
+        ],
+        "correct": 3,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = b = 3\na += 1\nprint(a, b)",
+        "options": [
+          "4 4",
+          "4 3",
+          "3 3",
+          "3 4"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(17 // 5 * 5 + 17 % 5)",
+        "options": [
+          "17",
+          "15",
+          "2",
+          "20"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      }
+    ],
+    "conditions": [
+      {
+        "q": "Программа нені шығарады?\nif 5 > 3:\n    print(\"A\")\nelse:\n    print(\"B\")",
+        "options": [
+          "A",
+          "B",
+          "AB",
+          "Бос жол"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(5 > 3 and 2 > 4)",
+        "options": [
+          "True",
+          "False",
+          "1",
+          "None"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(10 == 10.0)",
+        "options": [
+          "True",
+          "False",
+          "Қате",
+          "10"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(not 3 > 5)",
+        "options": [
+          "True",
+          "False",
+          "3",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Python-да «тең емес» салыстыру амалы қалай жазылады?",
+        "options": [
+          "<>",
+          "!=",
+          "=!",
+          "=/="
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "if операторындағы шарттан кейін қандай таңба қойылады?",
+        "options": [
+          ";",
+          ":",
+          "{",
+          "then"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 4\nif x % 2 == 0:\n    print(\"жұп\")\nelse:\n    print(\"тақ\")",
+        "options": [
+          "жұп",
+          "тақ",
+          "4",
+          "0"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(3 < 5 or 5 < 3)",
+        "options": [
+          "True",
+          "False",
+          "3",
+          "5"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Python-да «және» логикалық амалы қай сөзбен жазылады?",
+        "options": [
+          "&&",
+          "and",
+          "&",
+          "және"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = 7\nif a > 10:\n    print(\"үлкен\")\nprint(\"соңы\")",
+        "options": [
+          "үлкен",
+          "соңы",
+          "үлкен соңы",
+          "Бос жол"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 15\nif x > 20:\n    print(\"A\")\nelif x > 10:\n    print(\"B\")\nelse:\n    print(\"C\")",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "BC"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 0\nif x:\n    print(\"иә\")\nelse:\n    print(\"жоқ\")",
+        "options": [
+          "иә",
+          "жоқ",
+          "0",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na, b = 3, 7\nif a > b:\n    print(a)\nelse:\n    print(b)",
+        "options": [
+          "3",
+          "7",
+          "10",
+          "3 7"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 25\nif 10 < x < 30:\n    print(\"иә\")\nelse:\n    print(\"жоқ\")",
+        "options": [
+          "иә",
+          "жоқ",
+          "Қате",
+          "True"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nn = 12\nif n % 3 == 0 and n % 4 == 0:\n    print(\"A\")\nelif n % 3 == 0:\n    print(\"B\")\nelse:\n    print(\"C\")",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "AB"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nt = -5\nif t > 0:\n    print(\"плюс\")\nelif t == 0:\n    print(\"нөл\")\nelse:\n    print(\"минус\")",
+        "options": [
+          "плюс",
+          "нөл",
+          "минус",
+          "Бос жол"
+        ],
+        "correct": 2,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(5 > 3 > 1)",
+        "options": [
+          "True",
+          "False",
+          "Қате",
+          "1"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"abc\"\nif \"b\" in s:\n    print(1)\nelse:\n    print(0)",
+        "options": [
+          "1",
+          "0",
+          "b",
+          "True"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ny = 2024\nif y % 4 == 0 and y % 100 != 0 or y % 400 == 0:\n    print(\"кібісе\")\nelse:\n    print(\"кәдімгі\")",
+        "options": [
+          "кібісе",
+          "кәдімгі",
+          "2024",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 8\ny = 3\nif x % y == 2:\n    print(x // y)\nelse:\n    print(x % y)",
+        "options": [
+          "2",
+          "3",
+          "2.67",
+          "8"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 5\nif x > 2:\n    if x > 4:\n        print(\"A\")\n    else:\n        print(\"B\")\nelse:\n    print(\"C\")",
+        "options": [
+          "A",
+          "B",
+          "C",
+          "AB"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = 10\nif a > 5:\n    a -= 5\nif a > 3:\n    a *= 2\nelse:\n    a += 100\nprint(a)",
+        "options": [
+          "10",
+          "5",
+          "105",
+          "20"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(not (3 > 2 and 2 > 3) or False)",
+        "options": [
+          "True",
+          "False",
+          "Қате",
+          "None"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 7\nprint(\"A\" if x % 2 else \"B\")",
+        "options": [
+          "A",
+          "B",
+          "7",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na, b, c = 4, 9, 6\nm = a\nif b > m:\n    m = b\nif c > m:\n    m = c\nprint(m)",
+        "options": [
+          "4",
+          "9",
+          "6",
+          "19"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(0 or \"\" or \"x\")",
+        "options": [
+          "0",
+          "False",
+          "x",
+          "Бос жол"
+        ],
+        "correct": 2,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 3\nif x > 1:\n    print(\"A\", end=\"\")\nif x > 2:\n    print(\"B\", end=\"\")\nelif x > 0:\n    print(\"C\", end=\"\")\nelse:\n    print(\"D\", end=\"\")",
+        "options": [
+          "A",
+          "AB",
+          "ABC",
+          "B"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(True + True * 2)",
+        "options": [
+          "3",
+          "2",
+          "True",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = 5\nb = 0\nif b != 0 and a / b > 1:\n    print(\"A\")\nelse:\n    print(\"B\")",
+        "options": [
+          "A",
+          "B",
+          "Қате",
+          "None"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nn = 15\nif n % 15 == 0:\n    print(\"FizzBuzz\")\nelif n % 3 == 0:\n    print(\"Fizz\")\nelif n % 5 == 0:\n    print(\"Buzz\")\nelse:\n    print(n)",
+        "options": [
+          "Fizz",
+          "Buzz",
+          "FizzBuzz",
+          "15"
+        ],
+        "correct": 2,
+        "difficulty": "hard"
+      }
+    ],
+    "loops": [
+      {
+        "q": "Программа нені шығарады?\nfor i in range(3):\n    print(i, end=\" \")",
+        "options": [
+          "1 2 3",
+          "0 1 2",
+          "0 1 2 3",
+          "3"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "list(range(2, 10, 3)) нәтижесі:",
+        "options": [
+          "[2, 5, 8]",
+          "[2, 3, 4]",
+          "[2, 5, 8, 11]",
+          "[3, 6, 9]"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(1, 4):\n    print(i * 2, end=\" \")",
+        "options": [
+          "2 4 6",
+          "1 2 3",
+          "2 4 6 8",
+          "0 2 4"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = 0\nfor i in range(5):\n    s += i\nprint(s)",
+        "options": [
+          "10",
+          "15",
+          "5",
+          "4"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(sum(range(4)))",
+        "options": [
+          "6",
+          "10",
+          "4",
+          "3"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Шарт ақиқат болғанша қайталанатын цикл:",
+        "options": [
+          "for",
+          "while",
+          "if",
+          "def"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor c in \"abc\":\n    print(c, end=\"-\")",
+        "options": [
+          "a-b-c-",
+          "abc",
+          "a-b-c",
+          "-a-b-c"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ni = 0\nwhile i < 3:\n    i += 1\nprint(i)",
+        "options": [
+          "2",
+          "3",
+          "4",
+          "0"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "range(5) неше сан береді?",
+        "options": [
+          "4",
+          "5",
+          "6",
+          "0"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Циклды толық тоқтататын оператор:",
+        "options": [
+          "continue",
+          "break",
+          "pass",
+          "stop"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ni, s = 1, 0\nwhile i <= 4:\n    s += i\n    i += 1\nprint(s)",
+        "options": [
+          "4",
+          "6",
+          "10",
+          "15"
+        ],
+        "correct": 2,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(10):\n    if i == 3:\n        break\n    print(i, end=\" \")",
+        "options": [
+          "0 1 2",
+          "0 1 2 3",
+          "3",
+          "0 1 2 4 5 6 7 8 9"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(5):\n    if i % 2 == 0:\n        continue\n    print(i, end=\" \")",
+        "options": [
+          "0 2 4",
+          "1 3",
+          "1 3 5",
+          "0 1 2 3 4"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(5, 0, -2):\n    print(i, end=\" \")",
+        "options": [
+          "5 3 1",
+          "5 4 3 2 1",
+          "5 3",
+          "4 2 0"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\np = 1\nfor i in range(1, 5):\n    p *= i\nprint(p)",
+        "options": [
+          "24",
+          "10",
+          "120",
+          "4"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nn = 0\nfor i in range(10):\n    if i % 3 == 0:\n        n += 1\nprint(n)",
+        "options": [
+          "3",
+          "4",
+          "10",
+          "9"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 100\nwhile x > 10:\n    x //= 3\nprint(x)",
+        "options": [
+          "3",
+          "11",
+          "10",
+          "33"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"\"\nfor i in range(3):\n    s = str(i) + s\nprint(s)",
+        "options": [
+          "012",
+          "210",
+          "3",
+          "0 1 2"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nk = 0\nfor i in range(3):\n    for j in range(2):\n        k += 1\nprint(k)",
+        "options": [
+          "5",
+          "6",
+          "3",
+          "2"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nn = 1234\ns = 0\nwhile n > 0:\n    s += n % 10\n    n //= 10\nprint(s)",
+        "options": [
+          "10",
+          "4",
+          "1234",
+          "24"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(2, 6):\n    if i % 4 == 0:\n        break\nelse:\n    print(\"иә\")\nprint(i)",
+        "options": [
+          "4",
+          "иә 4",
+          "5",
+          "иә"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(3):\n    pass\nelse:\n    print(\"соңы\", i)",
+        "options": [
+          "соңы 2",
+          "соңы 3",
+          "2",
+          "Бос жол"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ni = 10\nwhile i > 0:\n    i -= 3\nprint(i)",
+        "options": [
+          "1",
+          "-2",
+          "0",
+          "-1"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = 0\nfor i in range(1, 10, 2):\n    if i == 7:\n        continue\n    s += i\nprint(s)",
+        "options": [
+          "25",
+          "18",
+          "9",
+          "16"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(3):\n    for j in range(i):\n        print(j, end=\"\")",
+        "options": [
+          "001",
+          "012",
+          "0011",
+          "01"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na, b = 0, 1\nfor _ in range(6):\n    a, b = b, a + b\nprint(a)",
+        "options": [
+          "8",
+          "5",
+          "13",
+          "6"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nn = 5\nwhile n != 1:\n    n = n // 2 if n % 2 == 0 else 3 * n + 1\n    print(n, end=\" \")",
+        "options": [
+          "16 8 4 2 1",
+          "5 16 8 4 2 1",
+          "16 8 4 2",
+          "2 1"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 0\nfor i in range(1, 4):\n    for j in range(1, 4):\n        if i == j:\n            continue\n        x += 1\nprint(x)",
+        "options": [
+          "6",
+          "9",
+          "3",
+          "4"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nc = 0\ni = 1\nwhile i < 100:\n    i *= 2\n    c += 1\nprint(c)",
+        "options": [
+          "6",
+          "7",
+          "100",
+          "64"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nfor i in range(5):\n    if i == 2:\n        continue\n    if i == 4:\n        break\n    print(i, end=\" \")",
+        "options": [
+          "0 1 3",
+          "0 1 2 3",
+          "0 1 3 4",
+          "0 1"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      }
+    ],
+    "strings": [
+      {
+        "q": "Программа нені шығарады?\ns = \"Python\"\nprint(s[1])",
+        "options": [
+          "P",
+          "y",
+          "t",
+          "Py"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(len(\"Сәлем\"))",
+        "options": [
+          "4",
+          "5",
+          "6",
+          "10"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"ab\" * 3)",
+        "options": [
+          "ab3",
+          "ababab",
+          "aaabbb",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"Python\".upper())",
+        "options": [
+          "PYTHON",
+          "python",
+          "Python",
+          "pYTHON"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"Сәлем\"\nprint(s[0])",
+        "options": [
+          "С",
+          "с",
+          "ә",
+          "м"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"a\" + \"b\" + \"c\")",
+        "options": [
+          "abc",
+          "a b c",
+          "a+b+c",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"мектеп\"\nprint(s[-1])",
+        "options": [
+          "м",
+          "п",
+          "е",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Python-да жолдың ұзындығын қай функция береді?",
+        "options": [
+          "size()",
+          "len()",
+          "length()",
+          "count()"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"ҰБТ\".lower())",
+        "options": [
+          "ұбт",
+          "ҰБТ",
+          "Ұбт",
+          "ұБТ"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"12\" * 2)",
+        "options": [
+          "24",
+          "1212",
+          "12 12",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"информатика\"\nprint(s.count(\"а\"))",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "11"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"информатика\"\nprint(s[2:5])",
+        "options": [
+          "фор",
+          "нфо",
+          "форм",
+          "инф"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"Python\"\nprint(s[:3] + s[-1])",
+        "options": [
+          "Pytn",
+          "Pyton",
+          "Pyt",
+          "Pythn"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"алма\".replace(\"а\", \"о\"))",
+        "options": [
+          "олмо",
+          "олма",
+          "алмо",
+          "ол мо"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"a,b,c\"\nprint(len(s.split(\",\")))",
+        "options": [
+          "3",
+          "5",
+          "2",
+          "1"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"Сәлем, дос\".find(\"дос\"))",
+        "options": [
+          "7",
+          "6",
+          "8",
+          "-1"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"abcdef\"\nprint(s[1:6:2])",
+        "options": [
+          "bdf",
+          "ace",
+          "bcd",
+          "bcdef"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"-\".join([\"a\", \"b\", \"c\"]))",
+        "options": [
+          "a-b-c",
+          "abc",
+          "-a-b-c",
+          "a-b-c-"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"level\"\nprint(s == s[::-1])",
+        "options": [
+          "True",
+          "False",
+          "level",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"  ok  \".strip() + \"!\")",
+        "options": [
+          "ok!",
+          "ok  !",
+          "ok !",
+          "ok"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"Python\"\nprint(s[::-2])",
+        "options": [
+          "nhy",
+          "nohtyP",
+          "Pto",
+          "yhn"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"abc\"\ns[0] = \"x\"\nprint(s)",
+        "options": [
+          "xbc",
+          "abc",
+          "x",
+          "Қате"
+        ],
+        "correct": 3,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"банан\"\nprint(s.count(\"ан\"), s.find(\"н\"))",
+        "options": [
+          "2 2",
+          "2 3",
+          "1 2",
+          "3 2"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"Python\"\nprint(s[10:])",
+        "options": [
+          "Қате",
+          "Бос жол",
+          "n",
+          "Python"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"abc\"\nr = \"\"\nfor ch in s:\n    r = ch + r\nprint(r)",
+        "options": [
+          "cba",
+          "abc",
+          "cab",
+          "bca"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"10\" < \"9\")",
+        "options": [
+          "True",
+          "False",
+          "Қате",
+          "10"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"aAbB\"\nk = 0\nfor c in s:\n    if c.isupper():\n        k += 1\nprint(k)",
+        "options": [
+          "2",
+          "4",
+          "0",
+          "1"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(ord(\"B\") - ord(\"A\"))",
+        "options": [
+          "1",
+          "66",
+          "65",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ns = \"мама\"\nprint(s.replace(\"м\", \"п\", 1))",
+        "options": [
+          "пама",
+          "папа",
+          "мапа",
+          "мама"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(\"abc\" * 0 + \"d\")",
+        "options": [
+          "d",
+          "abcd",
+          "Қате",
+          "0d"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      }
+    ],
+    "lists": [
+      {
+        "q": "Программа нені шығарады?\na = [3, 1, 2]\na.sort()\nprint(a)",
+        "options": [
+          "[3, 1, 2]",
+          "[1, 2, 3]",
+          "[3, 2, 1]",
+          "None"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [10, 20, 30]\nprint(a[-1])",
+        "options": [
+          "10",
+          "20",
+          "30",
+          "Қате"
+        ],
+        "correct": 2,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2, 3]\na.append(4)\nprint(len(a))",
+        "options": [
+          "3",
+          "4",
+          "5",
+          "[1, 2, 3, 4]"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [5, 8, 2]\nprint(a[0] + a[2])",
+        "options": [
+          "7",
+          "13",
+          "10",
+          "52"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(max([3, 9, 4]))",
+        "options": [
+          "3",
+          "9",
+          "4",
+          "16"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2, 3]\nprint(sum(a))",
+        "options": [
+          "6",
+          "123",
+          "3",
+          "[1, 2, 3]"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Python-да тізімнің бірінші элементінің индексі:",
+        "options": [
+          "0",
+          "1",
+          "-1",
+          "Кез келген сан"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint([1, 2] + [3])",
+        "options": [
+          "[1, 2, 3]",
+          "[4, 2]",
+          "[1, 2, [3]]",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [4, 7, 1]\nprint(7 in a)",
+        "options": [
+          "True",
+          "False",
+          "1",
+          "7"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(len([[1, 2], [3]]))",
+        "options": [
+          "2",
+          "3",
+          "1",
+          "4"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nm = [[1, 2], [3, 4]]\nprint(m[1][0])",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "correct": 2,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [3, 1, 2]\nprint(sorted(a, reverse=True))",
+        "options": [
+          "[3, 2, 1]",
+          "[1, 2, 3]",
+          "[2, 1, 3]",
+          "None"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [10, 20, 30, 40]\nprint(a[1:3])",
+        "options": [
+          "[20, 30]",
+          "[10, 20, 30]",
+          "[20, 30, 40]",
+          "[10, 20]"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2, 3]\na.insert(0, 9)\nprint(a)",
+        "options": [
+          "[9, 1, 2, 3]",
+          "[1, 2, 3, 9]",
+          "[9, 2, 3]",
+          "[1, 9, 2, 3]"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [5, 3, 5, 1]\nprint(a.index(5), a.count(5))",
+        "options": [
+          "0 2",
+          "2 2",
+          "0 1",
+          "3 2"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2, 3, 4]\na.pop()\nprint(a)",
+        "options": [
+          "[1, 2, 3]",
+          "[2, 3, 4]",
+          "[1, 2, 3, 4]",
+          "4"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [4, 8, 1, 6]\nm = a[0]\nfor x in a:\n    if x < m:\n        m = x\nprint(m)",
+        "options": [
+          "1",
+          "4",
+          "8",
+          "6"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [i * i for i in range(4)]\nprint(a)",
+        "options": [
+          "[0, 1, 4, 9]",
+          "[1, 4, 9, 16]",
+          "[0, 1, 2, 3]",
+          "[0, 2, 4, 6]"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [2, 4, 6]\nfor i in range(len(a)):\n    a[i] += 1\nprint(a)",
+        "options": [
+          "[3, 5, 7]",
+          "[2, 4, 6]",
+          "[3, 4, 6]",
+          "[2, 4, 6, 1]"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\nm = [[1, 2, 3], [4, 5, 6]]\nprint(len(m), len(m[0]))",
+        "options": [
+          "2 3",
+          "3 2",
+          "6",
+          "2 6"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2]\nb = a\nb.append(3)\nprint(a)",
+        "options": [
+          "[1, 2]",
+          "[1, 2, 3]",
+          "[3]",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2]\nb = a[:]\nb.append(3)\nprint(a)",
+        "options": [
+          "[1, 2]",
+          "[1, 2, 3]",
+          "[3]",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nm = [[1, 2], [3, 4], [5, 6]]\nprint(m[-1][-2])",
+        "options": [
+          "5",
+          "6",
+          "4",
+          "2"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [3, 1, 2]\nb = a.sort()\nprint(b)",
+        "options": [
+          "[1, 2, 3]",
+          "None",
+          "[3, 1, 2]",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2, 3, 4, 5]\nprint(a[::-2])",
+        "options": [
+          "[5, 3, 1]",
+          "[1, 3, 5]",
+          "[5, 4, 3, 2, 1]",
+          "[4, 2]"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nm = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\ns = 0\nfor i in range(3):\n    s += m[i][i]\nprint(s)",
+        "options": [
+          "15",
+          "12",
+          "45",
+          "6"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [5, 2, 9, 1]\nfor i in range(len(a) - 1):\n    if a[i] > a[i + 1]:\n        a[i], a[i + 1] = a[i + 1], a[i]\nprint(a)",
+        "options": [
+          "[2, 5, 1, 9]",
+          "[1, 2, 5, 9]",
+          "[2, 5, 9, 1]",
+          "[5, 2, 1, 9]"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [1, 2, 3]\nprint(a[5])",
+        "options": [
+          "None",
+          "3",
+          "Қате",
+          "[]"
+        ],
+        "correct": 2,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nm = [[0] * 2] * 2\nm[0][0] = 1\nprint(m)",
+        "options": [
+          "[[1, 0], [0, 0]]",
+          "[[1, 0], [1, 0]]",
+          "[[1, 1], [0, 0]]",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\na = [4, 3, 2, 1]\na.remove(3)\ndel a[0]\nprint(a)",
+        "options": [
+          "[2, 1]",
+          "[4, 1]",
+          "[4, 2]",
+          "[3, 2, 1]"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      }
+    ],
+    "functions": [
+      {
+        "q": "Python-да функция қай кілттік сөзбен анықталады?",
+        "options": [
+          "function",
+          "def",
+          "func",
+          "procedure"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(x):\n    return x + 1\nprint(f(4))",
+        "options": [
+          "4",
+          "5",
+          "x + 1",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef sq(n):\n    return n * n\nprint(sq(3))",
+        "options": [
+          "6",
+          "9",
+          "3",
+          "33"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Функциядан мәнді қайтаратын кілттік сөз:",
+        "options": [
+          "print",
+          "return",
+          "back",
+          "output"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef hi():\n    print(\"Сәлем\")\nhi()",
+        "options": [
+          "Сәлем",
+          "hi",
+          "None",
+          "Бос жол"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(abs(-7))",
+        "options": [
+          "7",
+          "-7",
+          "0",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef add(a, b):\n    return a + b\nprint(add(2, 3))",
+        "options": [
+          "5",
+          "23",
+          "6",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef add(a, b):\n    return a + b\nprint(add(\"2\", \"3\"))",
+        "options": [
+          "5",
+          "23",
+          "Қате",
+          "2 3"
+        ],
+        "correct": 1,
+        "difficulty": "easy"
+      },
+      {
+        "q": "def f(a, b): анықтамасындағы a мен b қалай аталады?",
+        "options": [
+          "Параметрлер",
+          "Модульдер",
+          "Циклдар",
+          "Түсініктемелер"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\nprint(len(\"abc\") + min(4, 2))",
+        "options": [
+          "5",
+          "6",
+          "7",
+          "abc2"
+        ],
+        "correct": 0,
+        "difficulty": "easy"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(a, b=2):\n    return a * b\nprint(f(3))",
+        "options": [
+          "3",
+          "5",
+          "6",
+          "Қате"
+        ],
+        "correct": 2,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(a, b=2):\n    return a ** b\nprint(f(2, 3))",
+        "options": [
+          "8",
+          "4",
+          "9",
+          "6"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(x):\n    if x > 0:\n        return \"оң\"\n    return \"оң емес\"\nprint(f(0))",
+        "options": [
+          "оң",
+          "оң емес",
+          "None",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f():\n    x = 5\nprint(f())",
+        "options": [
+          "5",
+          "None",
+          "Қате",
+          "0"
+        ],
+        "correct": 1,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef mx(a, b):\n    return a if a > b else b\nprint(mx(3, 8) + mx(5, 1))",
+        "options": [
+          "13",
+          "9",
+          "11",
+          "4"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(n):\n    s = 0\n    for i in range(1, n + 1):\n        s += i\n    return s\nprint(f(4))",
+        "options": [
+          "10",
+          "6",
+          "4",
+          "24"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef g(a, b):\n    return a - b\nprint(g(b=1, a=5))",
+        "options": [
+          "4",
+          "-4",
+          "Қате",
+          "6"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(x):\n    return x * 2\nprint(f(f(3)))",
+        "options": [
+          "12",
+          "6",
+          "9",
+          "36"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef p(s):\n    return s[::-1]\nprint(p(\"абв\"))",
+        "options": [
+          "вба",
+          "абв",
+          "ав",
+          "бва"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(a, b):\n    return a // b, a % b\nq, r = f(17, 5)\nprint(q, r)",
+        "options": [
+          "3 2",
+          "2 3",
+          "3.4 2",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "medium"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef fact(n):\n    if n <= 1:\n        return 1\n    return n * fact(n - 1)\nprint(fact(5))",
+        "options": [
+          "120",
+          "24",
+          "15",
+          "5"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\nx = 10\ndef f():\n    x = 5\n    return x\nf()\nprint(x)",
+        "options": [
+          "10",
+          "5",
+          "None",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(a, lst=[]):\n    lst.append(a)\n    return lst\nf(1)\nprint(f(2))",
+        "options": [
+          "[2]",
+          "[1, 2]",
+          "[1]",
+          "Қате"
+        ],
+        "correct": 1,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(n):\n    if n == 0:\n        return 0\n    return n % 10 + f(n // 10)\nprint(f(507))",
+        "options": [
+          "12",
+          "507",
+          "7",
+          "5"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(a):\n    a.append(0)\nb = [1]\nf(b)\nprint(b)",
+        "options": [
+          "[1, 0]",
+          "[1]",
+          "[0]",
+          "None"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(x):\n    x = x + 1\nn = 5\nf(n)\nprint(n)",
+        "options": [
+          "5",
+          "6",
+          "None",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\nprint(fib(7))",
+        "options": [
+          "13",
+          "8",
+          "21",
+          "7"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef gcd(a, b):\n    while b:\n        a, b = b, a % b\n    return a\nprint(gcd(48, 18))",
+        "options": [
+          "6",
+          "3",
+          "18",
+          "2"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(n):\n    return 1 if n == 0 else 2 * f(n - 1)\nprint(f(5))",
+        "options": [
+          "32",
+          "10",
+          "16",
+          "25"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      },
+      {
+        "q": "Программа нені шығарады?\ndef f(a, b=3, c=4):\n    return a + b * c\nprint(f(1, c=2))",
+        "options": [
+          "7",
+          "9",
+          "13",
+          "Қате"
+        ],
+        "correct": 0,
+        "difficulty": "hard"
+      }
+    ]
+  },
   "html": [
     {
       "q": "HTML аббревиатурасының мағынасы:",
