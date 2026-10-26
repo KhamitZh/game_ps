@@ -1,10 +1,11 @@
 import '../ui/styles.css';
 import { DEFAULT_TIME_LIMIT_MIN, MAX_TIME_LIMIT_MIN, MIN_TIME_LIMIT_MIN } from '../../../shared/src/constants';
+import { DEFAULT_LEVEL, LEVEL_IDS, LEVEL_TITLES, type LevelId } from '../../../shared/src/levels';
 import type { PhaseInfo, PublicPlayer, ServerMsg } from '../../../shared/src/protocol';
 import { rank, type RankedPlayer } from '../../../shared/src/ranking';
 import { characterPreview } from '../art/characters';
 import { wsUrl } from '../config';
-import { onLangChange, t } from '../i18n';
+import { getLang, onLangChange, t } from '../i18n';
 import { createGame } from '../net/api';
 import { Connection, type ConnStatus } from '../net/connection';
 import { byId, escapeHtml, fmtTime } from '../ui/dom';
@@ -21,6 +22,7 @@ const s = {
   pin: '',
   hostToken: '',
   timeLimitMin: DEFAULT_TIME_LIMIT_MIN,
+  level: DEFAULT_LEVEL as LevelId,
   phase: null as PhaseInfo | null,
   offset: 0,
   roster: [] as PublicPlayer[],
@@ -52,6 +54,10 @@ function forget(): void {
   }
 }
 
+function levelTitle(id: LevelId): string {
+  return LEVEL_TITLES[id]?.[getLang()] ?? id;
+}
+
 function renderLogin(): void {
   s.view = 'login';
   root.innerHTML = `
@@ -63,19 +69,27 @@ function renderLogin(): void {
         <input id="pw" class="input" type="password" autocomplete="current-password" />
         <label class="label" for="tl">${t('host.timeLimit')}</label>
         <input id="tl" class="input" type="number" min="${MIN_TIME_LIMIT_MIN}" max="${MAX_TIME_LIMIT_MIN}" value="${s.timeLimitMin}" />
+        <label class="label" for="lv">${t('host.level')}</label>
+        <select id="lv" class="input">
+          ${LEVEL_IDS.map((id, i) => `<option value="${id}"${id === s.level ? ' selected' : ''}>${i + 1}. ${escapeHtml(levelTitle(id))}</option>`).join('')}
+        </select>
         <p class="error">${s.error ? t(`error.${s.error}`) : ''}</p>
         <button class="btn btn-gold" type="submit">${t('host.create')}</button>
       </form>
     </div>`;
   const form = root.querySelector('form')!;
+  root.querySelector<HTMLSelectElement>('#lv')!.addEventListener('change', (e) => {
+    s.level = (e.target as HTMLSelectElement).value as LevelId;
+  });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const pw = root.querySelector<HTMLInputElement>('#pw')!.value;
     const tl = Number(root.querySelector<HTMLInputElement>('#tl')!.value) || DEFAULT_TIME_LIMIT_MIN;
     s.timeLimitMin = Math.min(MAX_TIME_LIMIT_MIN, Math.max(MIN_TIME_LIMIT_MIN, Math.round(tl)));
+    s.level = root.querySelector<HTMLSelectElement>('#lv')!.value as LevelId;
     form.querySelector<HTMLButtonElement>('button[type=submit]')!.disabled = true;
     try {
-      const r = await createGame(pw, s.timeLimitMin);
+      const r = await createGame(pw, s.timeLimitMin, s.level);
       if (!r.ok) {
         s.error = r.code;
         return renderLogin();
@@ -83,6 +97,7 @@ function renderLogin(): void {
       s.pin = r.pin;
       s.hostToken = r.hostToken;
       s.timeLimitMin = r.timeLimitMin;
+      s.level = r.level;
       s.error = '';
       save();
       connect();
@@ -123,6 +138,7 @@ function onMessage(m: ServerMsg): void {
   switch (m.t) {
     case 'hostWelcome':
       s.timeLimitMin = m.timeLimitMin;
+      s.level = m.level;
       s.roster = m.roster;
       s.ranking = m.ranking;
       setPhase(m.phase);
@@ -181,6 +197,7 @@ function renderDash(): void {
           <div class="label">${t('host.pinLabel')}</div>
           <div class="pin">${s.pin}</div>
           <div class="label">${t('host.joinAt', { url: escapeHtml(joinUrl) })}</div>
+          <div class="label">${t('host.level')}: <b>${escapeHtml(levelTitle(s.level))}</b></div>
         </div>
         <div class="stack" style="justify-items:end">
           <div class="label"><span>${t(`host.phase.${ph}`)}</span> · <span id="count"></span></div>

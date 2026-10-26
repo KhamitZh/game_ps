@@ -65,6 +65,7 @@
   "host.title": "Панель организатора",
   "host.password": "Пароль",
   "host.timeLimit": "Лимит времени (минуты)",
+  "host.level": "Уровень (тема)",
   "host.create": "Создать игру",
   "host.pinLabel": "PIN-код игры",
   "host.joinAt": "Адрес для входа: {url}",

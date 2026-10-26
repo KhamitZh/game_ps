@@ -5,6 +5,7 @@ import {
   FLOOR_SPAWN, MAPS, ROOMS, STAIRS_ARRIVAL, nearPedestal, onStairs, pathClear,
   type FloorId, type Point, type RoomId,
 } from '../../shared/src/map';
+import { DEFAULT_LEVEL, type LevelId } from '../../shared/src/levels';
 import { rank, type RankedPlayer } from '../../shared/src/ranking';
 import type {
   AnswerMark, Dir, ErrorCode, Phase, PhaseInfo, PlayerStatus, PosEntry, PublicPlayer, QuestionView, YouState,
@@ -12,6 +13,7 @@ import type {
 import type { QuestionBank } from './questions';
 
 export interface Assigned {
+  /** Index into the level's question pool. */
   qIndex: number;
   /** order[displayIndex] = original option index */
   order: number[];
@@ -45,6 +47,7 @@ export interface GameData {
   pin: string;
   hostToken: string;
   timeLimitMin: number;
+  level: LevelId;
   phase: Phase;
   countdownEndsAt: number | null;
   startedAt: number | null;
@@ -83,12 +86,13 @@ export class Game {
     readonly pin: string,
     readonly hostToken: string,
     readonly timeLimitMin: number,
+    readonly level: LevelId,
     private readonly questions: QuestionBank,
     private readonly deps: GameDeps,
   ) {}
 
   static fromData(d: GameData, questions: QuestionBank, deps: GameDeps): Game {
-    const g = new Game(d.pin, d.hostToken, d.timeLimitMin, questions, deps);
+    const g = new Game(d.pin, d.hostToken, d.timeLimitMin, d.level ?? DEFAULT_LEVEL, questions, deps);
     g.phase = d.phase;
     g.countdownEndsAt = d.countdownEndsAt;
     g.startedAt = d.startedAt;
@@ -103,6 +107,7 @@ export class Game {
       pin: this.pin,
       hostToken: this.hostToken,
       timeLimitMin: this.timeLimitMin,
+      level: this.level,
       phase: this.phase,
       countdownEndsAt: this.countdownEndsAt,
       startedAt: this.startedAt,
@@ -265,11 +270,15 @@ export class Game {
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     if (room.floor === 'f2' && !this.floor2Unlocked(p)) return fail('FLOOR_LOCKED');
     if (room.floor !== p.floor || !nearPedestal(room, p.x, p.y)) return fail('NOT_NEAR');
-    const pool = this.questions[roomId];
+    const pool = this.questions[this.level];
     if (!pool?.length) return fail('NO_QUESTION');
     let a = p.assigned[roomId];
     if (!a) {
-      a = { qIndex: Math.floor(this.deps.rng() * pool.length), order: this.shuffle([0, 1, 2, 3]) };
+      // A question already pinned to another room is never drawn again for the same player.
+      const used = new Set(Object.values(p.assigned).map((x) => x.qIndex));
+      const free = pool.map((_, i) => i).filter((i) => !used.has(i));
+      if (!free.length) return fail('NO_QUESTION');
+      a = { qIndex: free[Math.floor(this.deps.rng() * free.length)], order: this.shuffle([0, 1, 2, 3]) };
       p.assigned[roomId] = a;
     }
     const q = pool[a.qIndex];
@@ -283,7 +292,7 @@ export class Game {
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     const a = p.assigned[roomId];
     if (!a) return fail('NO_QUESTION');
-    const correct = a.order[optionIndex] === this.questions[roomId][a.qIndex].correct;
+    const correct = a.order[optionIndex] === this.questions[this.level][a.qIndex].correct;
     p.answered[roomId] = correct ? 'correct' : 'wrong';
     p.rooms += 1;
     if (correct) {

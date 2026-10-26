@@ -1,5 +1,6 @@
 import { LANGS, type Lang } from './constants';
 import { isRoomId, type FloorId, type RoomId } from './map';
+import type { LevelId } from './levels';
 import type { RankedPlayer } from './ranking';
 
 export type Phase = 'LOBBY' | 'COUNTDOWN' | 'PLAYING' | 'ENDED';
@@ -66,7 +67,7 @@ export type ClientMsg =
 
 export type ServerMsg =
   | { t: 'welcome'; token: string; you: YouState; phase: PhaseInfo; roster: PublicPlayer[] }
-  | { t: 'hostWelcome'; pin: string; timeLimitMin: number; phase: PhaseInfo; roster: PublicPlayer[]; ranking: RankedPlayer[] | null }
+  | { t: 'hostWelcome'; pin: string; timeLimitMin: number; level: LevelId; phase: PhaseInfo; roster: PublicPlayer[]; ranking: RankedPlayer[] | null }
   | { t: 'phase'; phase: PhaseInfo }
   | { t: 'roster'; players: PublicPlayer[] }
   | { t: 'you'; you: YouState }

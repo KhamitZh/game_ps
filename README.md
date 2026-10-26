@@ -26,9 +26,14 @@ cd client && npx playwright test # browser e2e (starts both dev servers)
 
 ## Edit questions
 
-Edit `server/questions.json`: every room id (`f1r1`…`f1r5`, `f2r1`…`f2r5`) needs at least one question
+Questions are grouped by **level** (one subject module per level). The host picks the level when creating a game.
+Level ids and their titles in three languages live in `shared/src/levels.ts`:
+`numsys`, `database`, `excel`, `python`, `html`, `css`, `js`, `computer`, `networks`, `grade11`.
+
+Edit `server/questions.json`: every level id needs **10–30** questions
 `{ "q": "...", "options": ["A", "B", "C", "D"], "correct": 0 }` (`correct` is the index 0–3). Each player gets a
-random question from the room's list with shuffled options. Run `npm test` to validate, then redeploy the server.
+different question from the level's pool in every one of the 10 rooms, with shuffled options. Use `\n` in `q` for
+multi-line code. Run `npm test` to validate, then redeploy the server.
 
 ## Deploy
 

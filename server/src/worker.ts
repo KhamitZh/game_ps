@@ -1,4 +1,5 @@
 import { DEFAULT_TIME_LIMIT_MIN, MAX_TIME_LIMIT_MIN, MIN_TIME_LIMIT_MIN } from '../../shared/src/constants';
+import { DEFAULT_LEVEL, isLevelId } from '../../shared/src/levels';
 import type { Env } from './env';
 import { GameRoom } from './GameRoom';
 
@@ -36,7 +37,7 @@ function room(env: Env, pin: string) {
 }
 
 async function createGame(req: Request, env: Env): Promise<Response> {
-  let body: { password?: unknown; timeLimitMin?: unknown };
+  let body: { password?: unknown; timeLimitMin?: unknown; level?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -49,10 +50,13 @@ async function createGame(req: Request, env: Env): Promise<Response> {
   const timeLimitMin = Number.isFinite(requested)
     ? Math.min(MAX_TIME_LIMIT_MIN, Math.max(MIN_TIME_LIMIT_MIN, Math.round(requested)))
     : DEFAULT_TIME_LIMIT_MIN;
+  const level = isLevelId(body.level) ? body.level : DEFAULT_LEVEL;
   const hostToken = crypto.randomUUID();
   for (let attempt = 0; attempt < 10; attempt++) {
     const pin = randomPin();
-    if (await room(env, pin).init({ pin, timeLimitMin, hostToken })) return json(env, { pin, hostToken, timeLimitMin });
+    if (await room(env, pin).init({ pin, timeLimitMin, level, hostToken })) {
+      return json(env, { pin, hostToken, timeLimitMin, level });
+    }
   }
   return json(env, { error: 'BUSY' }, 503);
 }

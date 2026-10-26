@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { COUNTDOWN_MS } from '../../shared/src/constants';
+import { LEVEL_IDS } from '../../shared/src/levels';
 import { MAPS, ROOMS, ROOM_IDS, STAIRS_ARRIVAL, tileCenter, type RoomId } from '../../shared/src/map';
 import { Game, type GameDeps } from '../src/game';
 import type { QuestionBank } from '../src/questions';
 
+/** Exactly one question per room, so a full run must use every question once. */
+const POOL = ROOM_IDS.map((_, i) => ({ q: `q${i}`, options: [`o${i}a`, `o${i}b`, `o${i}c`, `o${i}d`], correct: i % 4 }));
 const BANK = Object.fromEntries(
-  ROOM_IDS.map((id) => [id, [
-    { q: `${id}-a`, options: ['a0', 'a1', 'a2', 'a3'], correct: 0 },
-    { q: `${id}-b`, options: ['b0', 'b1', 'b2', 'b3'], correct: 3 },
-  ]]),
+  LEVEL_IDS.map((id) => [id, id === 'python' ? POOL.map((x) => ({ ...x, q: `py-${x.q}` })) : POOL]),
 ) as QuestionBank;
 
 let clock: number;
@@ -19,7 +19,7 @@ const deps = (): GameDeps => ({
   rng: () => (rngValues.length ? rngValues.shift()! : 0.5),
   newId: () => `id${++seq}`,
 });
-const newGame = (limitMin = 10) => new Game('123456', 'host-token', limitMin, BANK, deps());
+const newGame = (limitMin = 10) => new Game('123456', 'host-token', limitMin, 'numsys', BANK, deps());
 
 function join(g: Game, name: string) {
   const r = g.addPlayer(name, 0, 'kk');
@@ -42,7 +42,7 @@ function standAt(g: Game, id: string, roomId: RoomId) {
 }
 function displayedCorrect(g: Game, id: string, roomId: RoomId) {
   const a = g.players.get(id)!.assigned[roomId]!;
-  return a.order.indexOf(BANK[roomId][a.qIndex].correct);
+  return a.order.indexOf(POOL[a.qIndex].correct);
 }
 function solve(g: Game, id: string, roomId: RoomId, correct = true) {
   standAt(g, id, roomId);
@@ -245,7 +245,30 @@ describe('questions', () => {
     expect(r.question.options).toHaveLength(4);
     expect(JSON.stringify(r)).not.toContain('correct');
     const a = p.assigned.f1r1!;
-    expect([...r.question.options].sort()).toEqual([...BANK.f1r1[a.qIndex].options].sort());
+    expect([...r.question.options].sort()).toEqual([...POOL[a.qIndex].options].sort());
+  });
+
+  it('never gives the same player one question in two rooms', () => {
+    const g = newGame();
+    const p = join(g, 'A');
+    startPlaying(g);
+    for (const id of ROOM_IDS) {
+      rngValues = [0];
+      solve(g, p.id, id);
+    }
+    const used = ROOM_IDS.map((id) => p.assigned[id]!.qIndex);
+    expect(new Set(used).size).toBe(ROOM_IDS.length);
+    expect(p.keys).toBe(ROOM_IDS.length);
+  });
+
+  it('draws questions from the level the game was created with', () => {
+    const g = new Game('123456', 'host-token', 10, 'python', BANK, deps());
+    const p = join(g, 'A');
+    startPlaying(g);
+    standAt(g, p.id, 'f1r1');
+    const r = g.interact(p.id, 'f1r1');
+    if (!r.ok) throw new Error(r.code);
+    expect(r.question.q).toMatch(/^py-/);
   });
 
   it('keeps the same question and order on repeated interaction', () => {
@@ -427,6 +450,7 @@ describe('persistence', () => {
     const g2 = Game.fromData(JSON.parse(JSON.stringify(g.toData())), BANK, deps());
     const p2 = g2.players.get(p.id)!;
     expect(g2.phase).toBe('PLAYING');
+    expect(g2.level).toBe('numsys');
     expect(p2.online).toBe(false);
     expect(p2.answered.f1r2).toBeDefined();
     expect(p2.keys).toBe(1);

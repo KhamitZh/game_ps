@@ -65,6 +65,7 @@
   "host.title": "Host panel",
   "host.password": "Password",
   "host.timeLimit": "Time limit (minutes)",
+  "host.level": "Level (topic)",
   "host.create": "Create game",
   "host.pinLabel": "Game PIN",
   "host.joinAt": "Join at: {url}",

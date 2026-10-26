@@ -10,9 +10,11 @@ async function hostCreates(page: Page): Promise<string> {
   await page.goto('/host.html');
   await page.locator('#pw').fill(PASSWORD);
   await page.locator('#tl').fill('5');
+  await page.locator('#lv').selectOption('python');
   await page.locator('form button[type=submit]').click();
   const pinEl = page.locator('.pin');
   await expect(pinEl).toHaveText(/^\d{6}$/);
+  await expect(page.locator('.host-head')).toContainText('Python');
   return (await pinEl.textContent())!.trim();
 }
 

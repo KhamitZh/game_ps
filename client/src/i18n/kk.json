@@ -65,6 +65,7 @@
   "host.title": "Ұйымдастырушы панелі",
   "host.password": "Құпия сөз",
   "host.timeLimit": "Уақыт шегі (минут)",
+  "host.level": "Деңгей (тақырып)",
   "host.create": "Ойын жасау",
   "host.pinLabel": "Ойын PIN-коды",
   "host.joinAt": "Кіру адресі: {url}",

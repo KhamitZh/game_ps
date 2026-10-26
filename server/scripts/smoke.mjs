@@ -53,8 +53,9 @@ const post = (body) =>
 check((await (await fetch(BASE)).text()).includes('OK'), 'server answers on /');
 check((await post({ password: 'wrong', timeLimitMin: 5 })).status === 403, 'wrong host password is rejected');
 
-const created = await (await post({ password: PASSWORD, timeLimitMin: 5 })).json();
+const created = await (await post({ password: PASSWORD, timeLimitMin: 5, level: 'python' })).json();
 check(/^\d{6}$/.test(created.pin) && created.hostToken, `game created with PIN ${created.pin}`);
+check(created.level === 'python', 'game is created on the requested level');
 const { pin, hostToken } = created;
 
 const info = await (await fetch(`${BASE}/api/game/${pin}`)).json();
