@@ -1,1 +1,3 @@
 HOST_PASSWORD=dev-password
+# Overrides the production origin in wrangler.toml so http://localhost:5173 and LAN phones can call the API.
+ALLOWED_ORIGIN=*
