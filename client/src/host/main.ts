@@ -1,5 +1,5 @@
 import '../ui/styles.css';
-import { DEFAULT_TIME_LIMIT_MIN, MAX_TIME_LIMIT_MIN, MIN_TIME_LIMIT_MIN } from '../../../shared/src/constants';
+import { DEFAULT_TIME_LIMIT_MIN, MAX_TIME_LIMIT_MIN, MIN_TIME_LIMIT_MIN, TOTAL_ROOMS } from '../../../shared/src/constants';
 import {
   ALL_SUBTOPICS, DEFAULT_DIFFICULTY, DEFAULT_LEVEL, DIFFICULTIES, DIFFICULTY_TITLES, LEVEL_IDS, LEVEL_TITLES, SUBTOPICS,
   hasSubtopics, subtopicIds, type Difficulty, type LevelId, type PoolSelection,
@@ -7,6 +7,7 @@ import {
 import type { PhaseInfo, PublicPlayer, ServerMsg } from '../../../shared/src/protocol';
 import { rank, type RankedPlayer } from '../../../shared/src/ranking';
 import { characterPreview } from '../art/characters';
+import type { LiveMapScene, View } from './LiveMap';
 import { wsUrl } from '../config';
 import { getLang, onLangChange, t } from '../i18n';
 import { createGame } from '../net/api';
@@ -31,13 +32,92 @@ const s = {
   difficulty: DEFAULT_DIFFICULTY as Difficulty,
   /** What the running game was created with (from hostWelcome). */
   game: { level: DEFAULT_LEVEL, subtopic: null, difficulty: null } as PoolSelection,
+  poolSize: 0,
   phase: null as PhaseInfo | null,
   offset: 0,
   roster: [] as PublicPlayer[],
   ranking: null as RankedPlayer[] | null,
   error: '',
   conn: null as Connection | null,
+  /** The player picked on the live map or in the table. */
+  selected: null as string | null,
+  mapView: 'all' as View,
 };
+
+// ---------- live map ----------
+// One canvas for the whole session: re-rendering the dashboard moves it, never recreates it.
+const liveEl = document.createElement('div');
+liveEl.className = 'live';
+liveEl.dataset.count = '0';
+/**
+ * While the map is not shown it waits here, off screen but with a real size: a WebGL canvas
+ * whose parent collapses to 0×0 breaks its framebuffers.
+ */
+const liveParking = document.createElement('div');
+liveParking.className = 'live-parking';
+liveParking.setAttribute('aria-hidden', 'true');
+document.body.append(liveParking);
+
+function parkLive(): void {
+  if (liveEl.parentElement === liveParking) return;
+  liveParking.append(liveEl);
+  live?.sleep();
+}
+let live: LiveMapScene | null = null;
+let liveBoot: Promise<LiveMapScene> | null = null;
+
+function ensureLive(): void {
+  if (liveBoot) return;
+  // Phaser is only needed once a game is open: load it then, not on the login form.
+  liveBoot = import('./LiveMap').then((m) =>
+    m.bootLiveMap(liveEl, selectPlayer, (n) => { liveEl.dataset.count = String(n); }),
+  );
+  liveBoot.then((scene) => {
+    live = scene;
+    if (liveEl.parentElement === liveParking) scene.sleep();
+    scene.setRoster(s.roster);
+    scene.setView(s.mapView);
+    scene.select(s.selected);
+  }).catch(() => toast(t('net.failed'), 'bad'));
+}
+
+function selectPlayer(id: string | null): void {
+  s.selected = s.selected === id ? null : id;
+  live?.select(s.selected);
+  renderSelected();
+  for (const tr of root.querySelectorAll<HTMLTableRowElement>('#rows tr')) tr.classList.toggle('sel', tr.dataset.id === s.selected);
+}
+
+function setView(view: View): void {
+  s.mapView = view;
+  live?.setView(view);
+  for (const b of root.querySelectorAll<HTMLButtonElement>('.live-tabs button')) b.classList.toggle('on', b.dataset.view === view);
+}
+
+function renderSelected(): void {
+  const box = root.querySelector<HTMLElement>('#selCard');
+  if (!box) return;
+  const ranked = rank(s.roster);
+  const p = ranked.find((r) => r.id === s.selected);
+  if (!p) {
+    box.innerHTML = `<p class="hint">${t('host.live.hint')}</p>`;
+    return;
+  }
+  const lobby = (s.phase?.phase ?? 'LOBBY') === 'LOBBY';
+  box.innerHTML = `
+    <div class="sel-card">
+      <div class="sel-fig"></div>
+      <div class="stack" style="gap:4px">
+        <b class="sel-name">${escapeHtml(p.name)}</b>
+        <span>${lobby ? '' : `${t('host.col.place')}: <b>${p.place}</b> · `}🔑 ${p.keys} · 🚪 ${p.rooms}/${TOTAL_ROOMS}</span>
+        <span>${t(`floor.${p.floor}`)} · ${p.online ? t(`status.${p.status}`) : t('status.offline')}</span>
+        <span>${t('host.col.time')}: ${fmtTime(p.lastKeyAt)}</span>
+      </div>
+      <button class="btn" type="button" id="selClose" aria-label="✕">✕</button>
+    </div>`;
+  box.querySelector('.sel-fig')!.append(characterPreview(p.character));
+  box.querySelector('#selClose')!.addEventListener('click', () => selectPlayer(null));
+}
 
 function loadSaved(): { pin: string; hostToken: string } | null {
   try {
@@ -85,6 +165,7 @@ function subtopicOptions(level: LevelId): string {
 
 function renderLogin(): void {
   s.view = 'login';
+  parkLive();
   root.innerHTML = `
     <div class="host host-center">
       <form class="card panel stack" novalidate>
@@ -101,6 +182,7 @@ function renderLogin(): void {
         <div id="subRow" class="stack"${hasSubtopics(s.level) ? '' : ' hidden'}>
           <label class="label" for="st">${t('host.subtopic')}</label>
           <select id="st" class="input">${subtopicOptions(s.level)}</select>
+          <p class="hint" id="subHint"${s.subtopic === ALL_SUBTOPICS ? ' hidden' : ''}>${t('host.subtopicHint')}</p>
           <span class="label" id="diffLabel">${t('host.difficulty')}</span>
           <div class="seg" role="radiogroup" aria-labelledby="diffLabel">
             ${DIFFICULTIES.map((d) => `<label class="seg-opt"><input type="radio" name="diff" value="${d}"${d === s.difficulty ? ' checked' : ''} /><span>${escapeHtml(DIFFICULTY_TITLES[d][getLang()])}</span></label>`).join('')}
@@ -116,10 +198,12 @@ function renderLogin(): void {
     s.level = (e.target as HTMLSelectElement).value as LevelId;
     s.subtopic = ALL_SUBTOPICS;
     st.innerHTML = subtopicOptions(s.level);
+    root.querySelector<HTMLElement>('#subHint')!.hidden = true;
     root.querySelector<HTMLElement>('#subRow')!.hidden = !hasSubtopics(s.level);
   });
   st.addEventListener('change', () => {
     s.subtopic = st.value;
+    root.querySelector<HTMLElement>('#subHint')!.hidden = s.subtopic === ALL_SUBTOPICS;
   });
   for (const r of root.querySelectorAll<HTMLInputElement>('input[name=diff]')) {
     r.addEventListener('change', () => {
@@ -160,6 +244,7 @@ function renderLogin(): void {
 function connect(): void {
   s.conn?.close();
   s.view = 'connecting';
+  parkLive();
   root.innerHTML = `<div class="host host-center"><p>${t('net.connecting')}</p></div>`;
   s.conn = new Connection({
     url: wsUrl(s.pin),
@@ -187,7 +272,9 @@ function onMessage(m: ServerMsg): void {
     case 'hostWelcome':
       s.timeLimitMin = m.timeLimitMin;
       s.game = { level: m.level, subtopic: m.subtopic, difficulty: m.difficulty };
+      s.poolSize = m.poolSize ?? 0;
       s.roster = m.roster;
+      live?.setRoster(m.roster);
       s.ranking = m.ranking;
       setPhase(m.phase);
       renderDash();
@@ -198,8 +285,13 @@ function onMessage(m: ServerMsg): void {
       return;
     case 'roster':
       s.roster = m.players;
+      live?.setRoster(m.players);
       renderRows();
       renderCount();
+      renderSelected();
+      return;
+    case 'snapshot':
+      live?.applySnapshot(m.players);
       return;
     case 'ended':
       s.ranking = m.ranking;
@@ -229,6 +321,9 @@ function newGame(): void {
   s.roster = [];
   s.ranking = null;
   s.phase = null;
+  s.selected = null;
+  live?.applySnapshot([]);
+  live?.select(null);
   s.error = '';
   overlay.hidden = true;
   renderLogin();
@@ -236,6 +331,7 @@ function newGame(): void {
 
 function renderDash(): void {
   s.view = 'dash';
+  parkLive();
   const ph = s.phase?.phase ?? 'LOBBY';
   const joinUrl = `${location.origin}/?pin=${s.pin}`;
   root.innerHTML = `
@@ -246,6 +342,7 @@ function renderDash(): void {
           <div class="pin">${s.pin}</div>
           <div class="label">${t('host.joinAt', { url: escapeHtml(joinUrl) })}</div>
           <div class="label">${t('host.level')}: <b>${escapeHtml(selectionTitle(s.game))}</b></div>
+          ${s.poolSize > 0 && s.poolSize <= TOTAL_ROOMS ? `<div class="hint warn">${t('host.poolWarning', { n: s.poolSize })}</div>` : ''}
         </div>
         <div class="stack" style="justify-items:end">
           <div class="label"><span>${t(`host.phase.${ph}`)}</span> · <span id="count"></span></div>
@@ -258,6 +355,14 @@ function renderDash(): void {
         </div>
       </header>
       <section id="podium"></section>
+      ${ph !== 'ENDED' ? `
+      <section class="live-wrap">
+        <div class="row live-tabs">
+          ${(['all', 'f1', 'f2', 'lobby'] as View[]).map((v) => `<button class="chip${v === s.mapView ? ' on' : ''}" type="button" data-view="${v}">${v === 'all' ? t('host.view.all') : t(`floor.${v}`)}</button>`).join('')}
+        </div>
+        <div id="liveSlot"></div>
+        <div id="selCard"></div>
+      </section>` : ''}
       <table class="table">
         <thead><tr>
           <th>${t('host.col.place')}</th><th></th><th>${t('host.col.name')}</th><th>🚪</th><th>🔑</th>
@@ -272,6 +377,16 @@ function renderDash(): void {
   });
   root.querySelector('#new')?.addEventListener('click', newGame);
   if (ph === 'ENDED' && s.ranking) byId('podium').append(podium(s.ranking));
+  const slot = root.querySelector('#liveSlot');
+  if (slot) {
+    slot.replaceWith(liveEl);
+    live?.wake();
+    ensureLive();
+    for (const b of root.querySelectorAll<HTMLButtonElement>('.live-tabs button')) {
+      b.addEventListener('click', () => setView(b.dataset.view as View));
+    }
+    renderSelected();
+  }
   renderRows();
   renderCount();
   renderTimer();
@@ -291,7 +406,9 @@ function renderRows(): void {
   body.innerHTML = '';
   for (const p of rank(s.roster)) {
     const tr = document.createElement('tr');
-    if (!p.online) tr.className = 'off';
+    tr.dataset.id = p.id;
+    tr.className = `${p.online ? '' : 'off'}${p.id === s.selected ? ' sel' : ''}`.trim();
+    tr.addEventListener('click', () => selectPlayer(p.id));
     tr.innerHTML = `
       <td>${lobby ? '' : p.place}</td><td class="c"></td><td>${escapeHtml(p.name)}</td>
       <td>${p.rooms}</td><td>${p.keys}</td><td>${t(`floor.${p.floor}`)}</td>
@@ -311,10 +428,15 @@ function renderTimer(): void {
 
 mountTopBar(byId('topbar'), false);
 onLangChange(() => {
+  live?.refreshLang();
   if (s.view === 'dash') renderDash();
   else if (s.view === 'login') renderLogin();
 });
 setInterval(renderTimer, 250);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') s.conn?.wake();
+});
+window.addEventListener('online', () => s.conn?.wake());
 
 const saved = loadSaved();
 if (saved) {

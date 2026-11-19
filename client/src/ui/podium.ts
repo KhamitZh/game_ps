@@ -22,13 +22,15 @@ export function podium(ranking: RankedPlayer[]): HTMLElement {
   return wrap;
 }
 
-export function renderResults(root: HTMLElement, ranking: RankedPlayer[], myId: string | null): void {
+export function renderResults(root: HTMLElement, ranking: RankedPlayer[], myId: string | null, onLeave?: () => void): void {
   const me = myId ? ranking.find((r) => r.id === myId) : undefined;
   root.innerHTML = `
     <div class="results panel">
       <h1 class="logo">${t('results.title')}</h1>
       <div class="podium-slot"></div>
       ${me ? `<div class="myplace">${t('results.yourPlace', { place: me.place })}</div><div class="label">🔑 ${me.keys} · ⏱ ${fmtTime(me.lastKeyAt)}</div>` : ''}
+      ${onLeave ? `<button class="btn btn-gold leave" type="button">🏠 ${t('results.leave')}</button>` : ''}
     </div>`;
   root.querySelector('.podium-slot')!.replaceWith(podium(ranking));
+  root.querySelector('.leave')?.addEventListener('click', onLeave!);
 }

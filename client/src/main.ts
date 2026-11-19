@@ -5,7 +5,7 @@ import type { RoomId } from '../../shared/src/map';
 import { sfx, unlockAudio } from './audio/sfx';
 import { wsUrl } from './config';
 import { errorAction, type Stage } from './errorRouting';
-import { bootWorld, type WorldCallbacks, type WorldScene } from './game/WorldScene';
+import type { WorldCallbacks, WorldScene } from './game/WorldScene';
 import { getLang, onLangChange, t } from './i18n';
 import { getGameInfo } from './net/api';
 import { Connection, type ConnStatus } from './net/connection';
@@ -14,7 +14,7 @@ import { byId } from './ui/dom';
 import { Hud } from './ui/hud';
 import { renderResults } from './ui/podium';
 import { QuestionModal } from './ui/question';
-import { renderCharacters, renderHome, renderName } from './ui/screens';
+import { renderCharacters, renderHome, renderName, renderResume } from './ui/screens';
 import { SpectateBar } from './ui/spectate';
 import { toast } from './ui/toast';
 import { mountTopBar } from './ui/topbar';
@@ -23,6 +23,10 @@ import { TouchControls, isTouchDevice } from './ui/touch';
 type Prompt = 'interact' | 'stairsLocked' | null;
 
 const SESSION_KEY = 'kh.session';
+/** A saved seat outlives a closed tab or a killed phone browser, but not the game's storage. */
+const SESSION_TTL_MS = 3 * 60 * 60 * 1000;
+/** A first join that cannot reach the server gives up quickly instead of retrying for minutes. */
+const JOIN_MAX_RETRIES = 3;
 const RESULT_SHOW_MS = 1400;
 const PENDING_TIMEOUT_MS = 3000;
 
@@ -56,6 +60,9 @@ const app = {
   touch: null as TouchControls | null,
   prompt: null as Prompt,
   pendingTimer: 0,
+  joinRetries: 0,
+  /** A seat found in shared storage, waiting for the student to confirm it is theirs. */
+  resumeSeat: null as Seat | null,
 };
 
 const spectateBar = new SpectateBar(byId('spectate'), (id) => {
@@ -65,27 +72,65 @@ const spectateBar = new SpectateBar(byId('spectate'), (id) => {
 
 // ---------- session ----------
 
-function loadSession(): { pin: string; token: string } | null {
+/**
+ * The tab's own seat lives in sessionStorage (survives a reload). A copy in localStorage survives a
+ * closed tab or a killed phone browser. That copy is shared by every tab and by whoever sits at the
+ * computer next, so it is never resumed silently: the student first confirms it is their name, and
+ * the server still refuses it ("soft") while the seat is open in another tab.
+ */
+interface Seat { pin: string; token: string; name: string }
+function readSeat(store: Storage): Seat | null {
   try {
-    const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null');
-    return s && typeof s.pin === 'string' && typeof s.token === 'string' ? s : null;
+    const s = JSON.parse(store.getItem(SESSION_KEY) ?? 'null');
+    if (!s || typeof s.pin !== 'string' || typeof s.token !== 'string' || typeof s.savedAt !== 'number') return null;
+    if (Date.now() - s.savedAt > SESSION_TTL_MS) return null;
+    return { pin: s.pin, token: s.token, name: typeof s.name === 'string' ? s.name : '' };
   } catch {
     return null;
   }
 }
-function saveSession(pin: string, token: string): void {
+function loadSession(): (Seat & { soft: boolean }) | null {
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, token }));
+    const own = readSeat(sessionStorage);
+    if (own) return { ...own, soft: false };
+    const shared = readSeat(localStorage);
+    return shared ? { ...shared, soft: true } : null;
+  } catch {
+    return null;
+  }
+}
+function saveSession(pin: string, token: string, name: string): void {
+  const v = JSON.stringify({ pin, token, name, savedAt: Date.now() });
+  for (const store of [() => sessionStorage, () => localStorage]) {
+    try {
+      store().setItem(SESSION_KEY, v);
+    } catch {
+      // ignore
+    }
+  }
+}
+/** Once the game is over nobody needs to get back in from another tab: only this tab keeps the seat. */
+function dropSharedSeat(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
   } catch {
     // ignore
   }
 }
 function clearSession(): void {
-  try {
-    sessionStorage.removeItem(SESSION_KEY);
-  } catch {
-    // ignore
+  for (const store of [() => sessionStorage, () => localStorage]) {
+    try {
+      store().removeItem(SESSION_KEY);
+    } catch {
+      // ignore
+    }
   }
+}
+
+/** Leaves the finished game for good (a shared computer must not reopen it for the next student). */
+function leaveGame(): void {
+  clearSession();
+  location.href = location.pathname;
 }
 
 // ---------- screens ----------
@@ -94,6 +139,8 @@ function render(): void {
   switch (app.stage) {
     case 'home':
       return renderHome(ui.screen, { pin: app.pin, error: app.error }, submitPin);
+    case 'resume':
+      return renderResume(ui.screen, app.resumeSeat?.name ?? '', resumeSharedSeat, startFresh);
     case 'name':
       return renderName(ui.screen, { name: app.name, error: app.error }, (n) => { app.name = n; go('char'); }, () => go('home'), (n) => { app.name = n; });
     case 'char':
@@ -105,7 +152,7 @@ function render(): void {
       ui.screen.innerHTML = '';
       return;
     case 'results':
-      if (app.ranking) renderResults(ui.screen, app.ranking, app.you?.id ?? null);
+      if (app.ranking) renderResults(ui.screen, app.ranking, app.you?.id ?? null, leaveGame);
       return;
   }
 }
@@ -139,6 +186,7 @@ function join(): void {
 function connect(hello: ClientMsg): void {
   app.conn?.close();
   app.hello = hello;
+  app.joinRetries = 0;
   go('connecting');
   app.conn = new Connection({ url: wsUrl(app.pin), hello: () => app.hello, onMessage, onStatus });
   app.conn.open();
@@ -148,6 +196,11 @@ function onStatus(s: ConnStatus): void {
   if (s === 'open') {
     ui.overlay.hidden = true;
     return;
+  }
+  if (s === 'reconnecting' && app.stage === 'connecting' && app.hello?.t === 'join' && ++app.joinRetries > JOIN_MAX_RETRIES) {
+    app.conn?.close();
+    app.conn = null;
+    return go('home', 'NETWORK');
   }
   if (s === 'reconnecting' && app.stage === 'game') {
     ui.overlay.hidden = false;
@@ -196,13 +249,21 @@ function onMessage(m: ServerMsg): void {
 }
 
 async function onWelcome(m: Extract<ServerMsg, { t: 'welcome' }>): Promise<void> {
-  saveSession(app.pin, m.token);
+  saveSession(app.pin, m.token, m.you.name);
+  // An ended game is not worth a shared copy (see dropSharedSeat).
+  if (m.phase.phase === 'ENDED') dropSharedSeat();
   app.hello = { t: 'resume', token: m.token };
   app.you = m.you;
   app.roster = m.roster;
   app.phase = m.phase;
   app.offset = m.phase.serverNow - Date.now();
-  const world = app.world ?? (await app.worldBoot!);
+  let world: WorldScene;
+  try {
+    world = app.world ?? (await app.worldBoot!);
+  } catch {
+    // The game code failed to download (flaky network): the seat is saved, a reload resumes it.
+    return onStatus('failed');
+  }
   if (!app.world) {
     app.world = world;
     world.setCallbacks(worldCallbacks);
@@ -307,6 +368,7 @@ function openQuestion(q: QuestionView): void {
   sfx.open();
   ui.modal.open(
     q,
+    app.offset,
     (i) => app.conn?.send({ t: 'answer', roomId: q.roomId, optionIndex: i }),
     () => setFreeze('question', false),
   );
@@ -329,6 +391,7 @@ function onAnswerResult(roomId: RoomId, correct: boolean): void {
 
 function onEnded(ranking: RankedPlayer[]): void {
   app.ranking = ranking;
+  dropSharedSeat();
   app.stopCountdown?.();
   ui.modal.close();
   clearTimeout(app.pendingTimer);
@@ -346,6 +409,12 @@ function onEnded(ranking: RankedPlayer[]): void {
 function onError(code: ErrorCode): void {
   const action = errorAction(app.stage, code);
   if (code === 'BAD_TOKEN' || code === 'PIN_NOT_FOUND') clearSession();
+  if (code === 'SEAT_IN_USE') {
+    // The shared copy belongs to a tab that is still playing: start fresh in this one.
+    app.conn?.close();
+    app.conn = null;
+    return go('home');
+  }
   switch (action) {
     case 'ignore':
       return;
@@ -381,7 +450,7 @@ const worldCallbacks: WorldCallbacks = {
     setFreeze('pending', true);
     clearTimeout(app.pendingTimer);
     app.pendingTimer = window.setTimeout(() => setFreeze('pending', false), PENDING_TIMEOUT_MS);
-    app.conn?.send({ t: 'interact', roomId });
+    app.conn?.send({ t: 'interact', roomId, lang: getLang() });
   },
   onStairs: () => app.conn?.send({ t: 'stairs' }),
   onPrompt: (p) => {
@@ -419,12 +488,40 @@ onLangChange(() => {
   app.world?.refreshLang();
 });
 document.title = t('app.title');
-app.worldBoot = bootWorld('game');
+// Phaser is most of the download: load it in the background so the PIN screen appears at once.
+app.worldBoot = import('./game/WorldScene').then((m) => m.bootWorld('game'));
+
+// A phone that slept or lost Wi-Fi reconnects as soon as it is usable again.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') app.conn?.wake();
+});
+window.addEventListener('online', () => app.conn?.wake());
+
+function resumeSharedSeat(): void {
+  const seat = app.resumeSeat;
+  app.resumeSeat = null;
+  if (!seat) return go('home');
+  app.pin = seat.pin;
+  connect({ t: 'resume', token: seat.token, soft: true });
+}
+
+/** "That is not me": forget the other student's seat and start at the PIN form. */
+function startFresh(): void {
+  app.resumeSeat = null;
+  clearSession();
+  go('home');
+}
 
 const session = loadSession();
-if (session) {
+// A link with another PIN means a new game: do not drop the student back into an old one.
+const linkPin = new URLSearchParams(location.search).get('pin')?.replace(/\D/g, '');
+if (session && linkPin && linkPin !== session.pin) clearSession();
+if (!session || (linkPin && linkPin !== session.pin)) {
+  go('home');
+} else if (session.soft) {
+  app.resumeSeat = session;
+  go('resume');
+} else {
   app.pin = session.pin;
   connect({ t: 'resume', token: session.token });
-} else {
-  go('home');
 }

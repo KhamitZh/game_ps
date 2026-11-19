@@ -10,6 +10,13 @@ class_name = "GameRoom"
 tag = "v1"
 new_sqlite_classes = ["GameRoom"]
 
+# At most 10 game creations (password attempts) per IP per minute.
+[[ratelimits]]
+name = "CREATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+
 [vars]
-# Set to the Vercel URL in production, e.g. "https://key-house.vercel.app"
+# Set to the Vercel URL in production, e.g. "https://key-house.vercel.app";
+# several origins can be separated by commas.
 ALLOWED_ORIGIN = "*"

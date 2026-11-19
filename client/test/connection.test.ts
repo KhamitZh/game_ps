@@ -74,16 +74,50 @@ describe('Connection', () => {
     expect(statuses.at(-1)).toBe('open');
   });
 
-  it('gives up after five failed attempts', () => {
-    const c = make();
+  it('caps the backoff at five seconds and gives up after the retry budget', () => {
+    const c = new Connection({
+      url: 'ws://x/ws/123456', hello: () => null, onMessage: () => {}, onStatus: (s) => statuses.push(s),
+      WebSocketImpl: FakeWS, maxRetries: 6,
+    });
     c.open();
     FakeWS.all[0].serverDrop();
-    for (const delay of [500, 1000, 2000, 4000, 8000]) {
-      vi.advanceTimersByTime(delay);
+    for (const delay of [500, 1000, 2000, 4000, 5000, 5000]) {
+      vi.advanceTimersByTime(delay - 1);
+      const before = FakeWS.all.length;
+      vi.advanceTimersByTime(1);
+      expect(FakeWS.all).toHaveLength(before + 1);
       FakeWS.all.at(-1)!.serverDrop();
     }
-    expect(FakeWS.all).toHaveLength(6);
+    expect(FakeWS.all).toHaveLength(7);
     expect(statuses.at(-1)).toBe('failed');
+  });
+
+  it('keeps retrying for minutes by default', () => {
+    const c = make();
+    c.open();
+    for (let i = 0; i < 30; i++) {
+      FakeWS.all.at(-1)!.serverDrop();
+      vi.advanceTimersByTime(5000);
+    }
+    expect(statuses).not.toContain('failed');
+  });
+
+  it('wake() reconnects at once while waiting or after giving up, but not after a final close', () => {
+    const c = new Connection({
+      url: 'ws://x/ws/123456', hello: () => null, onMessage: () => {}, onStatus: (s) => statuses.push(s),
+      WebSocketImpl: FakeWS, maxRetries: 0,
+    });
+    c.open();
+    FakeWS.all[0].serverDrop();
+    expect(statuses.at(-1)).toBe('failed');
+    c.wake();
+    expect(FakeWS.all).toHaveLength(2);
+    c.wake();
+    expect(FakeWS.all).toHaveLength(2);
+    FakeWS.all[1].serverOpen();
+    FakeWS.all[1].serverDrop(4001);
+    c.wake();
+    expect(FakeWS.all).toHaveLength(2);
   });
 
   it('does not reconnect after close() or a server-final close code', () => {

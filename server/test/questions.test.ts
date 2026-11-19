@@ -96,6 +96,24 @@ describe('validateQuestions', () => {
     expect(() => validateQuestions(raw)).toThrowError(/css: 10\.\.30/);
   });
 
+  it('checks translations: only ru/en, a non-empty text and 4 different options', () => {
+    const raw = good();
+    const list = raw.numsys as Question[];
+    list[0] = { ...list[0], i18n: { ru: { q: 'Вопрос?', options: ['а', 'б', 'в', 'г'] } } };
+    expect(() => validateQuestions(raw)).not.toThrow();
+    list[1] = { ...list[1], i18n: { ru: { q: ' ', options: ['а', 'а', 'в'] }, de: { q: 'x', options: [] } } as never };
+    expect(() => validateQuestions(raw)).toThrowError(/numsys\[1\]\.i18n\.ru\.q[\s\S]*numsys\[1\]\.i18n\.ru\.options[\s\S]*numsys\[1\]\.i18n\.de: unknown language/);
+  });
+
+  it('ships Russian and English for every Python question', () => {
+    for (const list of Object.values(bank.python as Record<string, Question[]>)) {
+      for (const q of list) {
+        expect(q.i18n?.ru?.options).toHaveLength(4);
+        expect(q.i18n?.en?.options).toHaveLength(4);
+      }
+    }
+  });
+
   it('rejects non-objects', () => {
     expect(() => validateQuestions(null)).toThrow();
   });

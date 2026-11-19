@@ -11,7 +11,7 @@ export type AnswerMark = 'correct' | 'wrong';
 export const ERROR_CODES = [
   'PIN_NOT_FOUND', 'GAME_FULL', 'NAME_INVALID', 'NAME_TAKEN', 'BAD_CHARACTER', 'ALREADY_STARTED',
   'BAD_TOKEN', 'BAD_HOST_TOKEN', 'BAD_PASSWORD', 'WRONG_PHASE', 'NOT_NEAR', 'ALREADY_ANSWERED',
-  'FLOOR_LOCKED', 'NO_QUESTION', 'NO_PLAYERS', 'BAD_REQUEST', 'BUSY', 'BAD_SELECTION',
+  'FLOOR_LOCKED', 'NO_QUESTION', 'NO_PLAYERS', 'BAD_REQUEST', 'BUSY', 'BAD_SELECTION', 'RATE_LIMITED', 'SEAT_IN_USE',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
@@ -51,14 +51,18 @@ export interface PhaseInfo {
 }
 
 export interface PosEntry { id: string; x: number; y: number; dir: Dir; moving: boolean; floor: FloorId }
-export interface QuestionView { roomId: RoomId; q: string; options: string[] }
+/** `deadline` is server time; after it the room counts as answered wrong. */
+export interface QuestionView { roomId: RoomId; q: string; options: string[]; deadline: number }
 
 export type ClientMsg =
   | { t: 'join'; name: string; character: number; lang: Lang }
-  | { t: 'resume'; token: string }
+  /** soft: the seat came from storage shared by all tabs, so take it over only if nobody else holds it. */
+  | { t: 'resume'; token: string; soft?: boolean }
   | { t: 'host'; hostToken: string }
   | { t: 'move'; x: number; y: number; dir: Dir; moving: boolean }
-  | { t: 'interact'; roomId: RoomId }
+  /** `lang` picks the question's translation (the player may have switched language since joining). */
+  | { t: 'interact'; roomId: RoomId; lang?: Lang }
+  /** optionIndex -1 means the time ran out without an answer. */
   | { t: 'answer'; roomId: RoomId; optionIndex: number }
   | { t: 'stairs' }
   | { t: 'spectate'; targetId: string | null }
@@ -67,7 +71,7 @@ export type ClientMsg =
 
 export type ServerMsg =
   | { t: 'welcome'; token: string; you: YouState; phase: PhaseInfo; roster: PublicPlayer[] }
-  | { t: 'hostWelcome'; pin: string; timeLimitMin: number; level: LevelId; subtopic: string | null; difficulty: Difficulty | null; phase: PhaseInfo; roster: PublicPlayer[]; ranking: RankedPlayer[] | null }
+  | { t: 'hostWelcome'; pin: string; timeLimitMin: number; level: LevelId; subtopic: string | null; difficulty: Difficulty | null; poolSize: number; phase: PhaseInfo; roster: PublicPlayer[]; ranking: RankedPlayer[] | null }
   | { t: 'phase'; phase: PhaseInfo }
   | { t: 'roster'; players: PublicPlayer[] }
   | { t: 'you'; you: YouState }
@@ -97,7 +101,8 @@ export function parseClientMsg(raw: string): ClientMsg | null {
         ? { t: 'join', name: m.name, character: m.character as number, lang: m.lang as Lang }
         : null;
     case 'resume':
-      return isStr(m.token, 64) ? { t: 'resume', token: m.token } : null;
+      if (!isStr(m.token, 64)) return null;
+      return m.soft === true ? { t: 'resume', token: m.token, soft: true } : { t: 'resume', token: m.token };
     case 'host':
       return isStr(m.hostToken, 64) ? { t: 'host', hostToken: m.hostToken } : null;
     case 'move':
@@ -105,7 +110,9 @@ export function parseClientMsg(raw: string): ClientMsg | null {
         ? { t: 'move', x: m.x, y: m.y, dir: m.dir as Dir, moving: m.moving }
         : null;
     case 'interact':
-      return isRoomId(m.roomId) ? { t: 'interact', roomId: m.roomId } : null;
+      if (!isRoomId(m.roomId)) return null;
+      if (m.lang === undefined) return { t: 'interact', roomId: m.roomId };
+      return (LANGS as readonly unknown[]).includes(m.lang) ? { t: 'interact', roomId: m.roomId, lang: m.lang as Lang } : null;
     case 'answer':
       return isRoomId(m.roomId) && Number.isInteger(m.optionIndex)
         ? { t: 'answer', roomId: m.roomId, optionIndex: m.optionIndex as number }

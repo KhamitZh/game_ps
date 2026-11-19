@@ -1,5 +1,6 @@
 import {
-  CHARACTER_COUNT, COUNTDOWN_MS, MAX_PLAYERS, NAME_MAX, ROOMS_PER_FLOOR, SPEED, TOTAL_ROOMS, type Lang,
+  CHARACTER_COUNT, COUNTDOWN_MS, MAX_PLAYERS, NAME_MAX, QUESTION_TIME_MS, ROOMS_PER_FLOOR, SPEED, TOTAL_ROOMS,
+  type Lang,
 } from '../../shared/src/constants';
 import {
   FLOOR_SPAWN, MAPS, ROOMS, STAIRS_ARRIVAL, nearPedestal, onStairs, pathClear,
@@ -17,6 +18,8 @@ export interface Assigned {
   qIndex: number;
   /** order[displayIndex] = original option index */
   order: number[];
+  /** Server time of the first opening; missing in games stored before the time limit existed. */
+  openedAt?: number;
 }
 
 export interface PlayerState {
@@ -76,6 +79,8 @@ const MAX_MOVE_DT_MS = 250;
 export const OFFLINE_GRACE_MS = 30_000;
 const MOVE_SLACK = 1.5;
 const MOVE_SLACK_PX = 4;
+/** An answer sent right at the deadline still counts: it was in flight. */
+export const ANSWER_GRACE_MS = 2000;
 
 export class Game {
   phase: Phase = 'LOBBY';
@@ -95,6 +100,11 @@ export class Game {
     private readonly deps: GameDeps,
   ) {
     this.pool = selectPool(questions, selection);
+  }
+
+  /** How many questions this game draws from; with no more than the 10 rooms, everyone gets the same set. */
+  get poolSize(): number {
+    return this.pool.length;
   }
 
   get level(): LevelId {
@@ -217,6 +227,24 @@ export class Game {
     return false;
   }
 
+  /**
+   * When the stored game may next be deleted. Before that time the storage alarm only needs to
+   * wake up again (a running game is ended by tick() once its time is up); an ended game keeps
+   * its results for `keepMs`; a lobby that never started is due as soon as its alarm fires.
+   */
+  cleanupAt(keepMs: number): number {
+    switch (this.phase) {
+      case 'COUNTDOWN':
+        return this.countdownEndsAt ?? this.deps.now();
+      case 'PLAYING':
+        return this.endsAt ?? this.deps.now();
+      case 'ENDED':
+        return (this.endedAt ?? this.deps.now()) + keepMs;
+      case 'LOBBY':
+        return this.deps.now();
+    }
+  }
+
   private beginPlaying(): void {
     this.phase = 'PLAYING';
     this.startedAt = this.countdownEndsAt;
@@ -275,7 +303,7 @@ export class Game {
     return { ok: true, floor: p.floor, x: p.x, y: p.y };
   }
 
-  interact(id: string, roomId: RoomId): { ok: true; question: QuestionView } | Fail {
+  interact(id: string, roomId: RoomId, lang?: Lang): { ok: true; question: QuestionView } | Fail {
     const p = this.players.get(id);
     if (!p || this.phase !== 'PLAYING' || p.status !== 'playing') return fail('WRONG_PHASE');
     const room = ROOMS[roomId];
@@ -296,19 +324,27 @@ export class Game {
     }
     const q = pool[a.qIndex];
     if (!q) return fail('NO_QUESTION');
-    return { ok: true, question: { roomId, q: q.q, options: a.order.map((i) => q.options[i]) } };
+    a.openedAt ??= this.deps.now();
+    const want = lang ?? p.lang;
+    const tr = want === 'kk' ? undefined : q.i18n?.[want];
+    const options = tr?.options ?? q.options;
+    return {
+      ok: true,
+      question: { roomId, q: tr?.q ?? q.q, options: a.order.map((i) => options[i]), deadline: a.openedAt + QUESTION_TIME_MS },
+    };
   }
 
   answer(id: string, roomId: RoomId, optionIndex: number): { ok: true; correct: boolean; finished: boolean } | Fail {
     const p = this.players.get(id);
     if (!p || this.phase !== 'PLAYING' || p.status !== 'playing') return fail('WRONG_PHASE');
-    if (!ROOMS[roomId] || !Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex > 3) return fail('BAD_REQUEST');
+    if (!ROOMS[roomId] || !Number.isInteger(optionIndex) || optionIndex < -1 || optionIndex > 3) return fail('BAD_REQUEST');
     if (p.answered[roomId]) return fail('ALREADY_ANSWERED');
     const a = p.assigned[roomId];
     if (!a) return fail('NO_QUESTION');
     const q = this.pool[a.qIndex];
     if (!q) return fail('NO_QUESTION');
-    const correct = a.order[optionIndex] === q.correct;
+    const late = a.openedAt !== undefined && this.deps.now() > a.openedAt + QUESTION_TIME_MS + ANSWER_GRACE_MS;
+    const correct = optionIndex >= 0 && !late && a.order[optionIndex] === q.correct;
     p.answered[roomId] = correct ? 'correct' : 'wrong';
     p.rooms += 1;
     if (correct) {
@@ -394,10 +430,11 @@ export class Game {
     return p.floor;
   }
 
-  snapshotFor(floor: FloorId): PosEntry[] {
+  /** Online players on one floor; `null` gives every floor (the host's live map). */
+  snapshotFor(floor: FloorId | null): PosEntry[] {
     const out: PosEntry[] = [];
     for (const p of this.players.values()) {
-      if (!p.online || p.floor !== floor) continue;
+      if (!p.online || (floor !== null && p.floor !== floor)) continue;
       out.push({ id: p.id, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, moving: p.moving, floor: p.floor });
     }
     return out;

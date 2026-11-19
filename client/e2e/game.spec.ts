@@ -20,10 +20,18 @@ async function hostCreates(page: Page): Promise<string> {
   return (await pinEl.textContent())!.trim();
 }
 
+/** Players of one test share a browser context, so a new tab is offered the previous player's seat: decline it. */
+async function skipSharedSeat(page: Page): Promise<void> {
+  const prompt = page.locator('.resume');
+  await expect(page.locator('#pin').or(prompt)).toBeVisible();
+  if (await prompt.isVisible()) await page.locator('#fresh').click();
+}
+
 async function startJoin(ctx: BrowserContext, pin: string, name: string, char: number, errors: string[]): Promise<Page> {
   const page = await ctx.newPage();
   watchErrors(page, errors);
   await page.goto(`/?pin=${pin}`);
+  await skipSharedSeat(page);
   await page.locator('form button[type=submit]').click();
   await page.locator('#name').fill(name);
   await page.locator('form button[type=submit]').click();
@@ -71,6 +79,9 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
   const p1 = await join(context, pin, 'Аян', 0, errors);
   const p2 = await join(context, pin, 'Bota', 5, errors);
   await expect(page.locator('#rows tr')).toHaveCount(2);
+  // The host's live map shows both players walking in the lobby.
+  await expect(page.locator('.live canvas')).toBeVisible();
+  await expect(page.locator('.live')).toHaveAttribute('data-count', '2');
 
   // Review Focus 4: same Cyrillic name, other case
   const dup = await startJoin(context, pin, 'аЯН', 2, errors);
@@ -81,6 +92,12 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
   await page.locator('#start').click();
   await expect(p1.locator('#hud')).toBeVisible({ timeout: 10_000 });
   await expect(p1.locator('#hud')).toContainText('0/10');
+  // Both players are now on floor 1 of the host's map; picking one in the table shows their card.
+  await expect(page.locator('.live')).toHaveAttribute('data-count', '2');
+  await page.locator('.live-tabs button[data-view=f1]').click();
+  await page.locator('#rows tr', { hasText: 'Bota' }).click();
+  await expect(page.locator('.sel-card')).toContainText('Bota');
+  await expect(page.locator('#rows tr.sel')).toHaveCount(1);
 
   await p1.bringToFront();
   await p1.keyboard.down('ArrowRight');
@@ -88,11 +105,14 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
   await p1.keyboard.up('ArrowRight');
 
   // Review Focus 2: player reload keeps the game
+  // A student reloads the page they are looking at; Phaser pauses in a hidden tab and would not boot.
+  await p2.bringToFront();
   await p2.reload();
   await expect(p2.locator('#hud')).toBeVisible({ timeout: 10_000 });
   await expect(p2.locator('#screen')).toBeEmpty();
 
   // Review Focus 3: host reload keeps the dashboard
+  await page.bringToFront();
   await page.reload();
   await expect(page.locator('.pin')).toHaveText(pin);
   await expect(page.locator('#rows tr')).toHaveCount(2);
@@ -104,6 +124,11 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
     await expect(p.locator('.myplace')).toBeVisible();
   }
   await expect(page.locator('.podium')).toBeVisible();
+  // "Back to home page" leaves the finished game: the PIN form is shown and a reload stays there.
+  await p1.locator('.results .leave').click();
+  await expect(p1.locator('#pin')).toBeVisible();
+  await p1.reload();
+  await expect(p1.locator('#pin')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -125,6 +150,7 @@ test('a locked question modal is cleared after a reconnect', async ({ page, cont
     });
   });
   await p.goto(`/?pin=${pin}`);
+  await skipSharedSeat(p);
   await p.locator('form button[type=submit]').click();
   await p.locator('#name').fill('Net');
   await p.locator('form button[type=submit]').click();
@@ -135,7 +161,7 @@ test('a locked question modal is cleared after a reconnect', async ({ page, cont
   await page.locator('#start').click();
   await expect(p.locator('#hud')).toBeVisible({ timeout: 10_000 });
 
-  routes.at(-1)!.send(JSON.stringify({ t: 'question', question: { roomId: 'f1r1', q: 'Test?', options: ['a', 'b', 'c', 'd'] } }));
+  routes.at(-1)!.send(JSON.stringify({ t: 'question', question: { roomId: 'f1r1', q: 'Test?', options: ['a', 'b', 'c', 'd'], deadline: Date.now() + 60_000 } }));
   await expect(p.locator('#modal')).toBeVisible();
   dropAnswers = true;
   await p.locator('.q-opt').first().click();
@@ -156,5 +182,36 @@ test('touch controls fit on a phone', async ({ page, context }, testInfo) => {
   await expect(p.locator('#touch .joy')).toBeInViewport();
   await expect(p.locator('#touch .act')).toBeInViewport();
   await expect(p.locator('#topbar')).toBeInViewport();
+  expect(errors).toEqual([]);
+});
+
+test('a seat left on a shared computer is resumed only after the student confirms it', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'desktop only');
+  const errors: string[] = [];
+  const pin = await hostCreates(page);
+  const first = await join(context, pin, 'Dana', 3, errors);
+  await first.close();
+
+  // The next student opens the site on the same computer: no silent take-over.
+  const next = await context.newPage();
+  watchErrors(next, errors);
+  await next.goto('/');
+  await expect(next.locator('.resume')).toContainText('Dana');
+  await expect(next.locator('#lobbybar')).toBeHidden();
+  await next.locator('#fresh').click();
+  await expect(next.locator('#pin')).toBeVisible();
+  await next.reload();
+  await expect(next.locator('#pin')).toBeVisible();
+  await next.close();
+
+  // A student who closed their own tab reopens the site and confirms it is them.
+  const again = await join(context, pin, 'Erlan', 4, errors);
+  await again.close();
+  const back = await context.newPage();
+  watchErrors(back, errors);
+  await back.goto('/');
+  await expect(back.locator('.resume')).toContainText('Erlan');
+  await back.locator('#continue').click();
+  await expect(back.locator('#lobbybar')).toBeVisible();
   expect(errors).toEqual([]);
 });
