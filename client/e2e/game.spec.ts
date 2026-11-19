@@ -20,10 +20,18 @@ async function hostCreates(page: Page): Promise<string> {
   return (await pinEl.textContent())!.trim();
 }
 
+/** Players of one test share a browser context, so a new tab is offered the previous player's seat: decline it. */
+async function skipSharedSeat(page: Page): Promise<void> {
+  const prompt = page.locator('.resume');
+  await expect(page.locator('#pin').or(prompt)).toBeVisible();
+  if (await prompt.isVisible()) await page.locator('#fresh').click();
+}
+
 async function startJoin(ctx: BrowserContext, pin: string, name: string, char: number, errors: string[]): Promise<Page> {
   const page = await ctx.newPage();
   watchErrors(page, errors);
   await page.goto(`/?pin=${pin}`);
+  await skipSharedSeat(page);
   await page.locator('form button[type=submit]').click();
   await page.locator('#name').fill(name);
   await page.locator('form button[type=submit]').click();
@@ -142,6 +150,7 @@ test('a locked question modal is cleared after a reconnect', async ({ page, cont
     });
   });
   await p.goto(`/?pin=${pin}`);
+  await skipSharedSeat(p);
   await p.locator('form button[type=submit]').click();
   await p.locator('#name').fill('Net');
   await p.locator('form button[type=submit]').click();
@@ -173,5 +182,36 @@ test('touch controls fit on a phone', async ({ page, context }, testInfo) => {
   await expect(p.locator('#touch .joy')).toBeInViewport();
   await expect(p.locator('#touch .act')).toBeInViewport();
   await expect(p.locator('#topbar')).toBeInViewport();
+  expect(errors).toEqual([]);
+});
+
+test('a seat left on a shared computer is resumed only after the student confirms it', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'desktop only');
+  const errors: string[] = [];
+  const pin = await hostCreates(page);
+  const first = await join(context, pin, 'Dana', 3, errors);
+  await first.close();
+
+  // The next student opens the site on the same computer: no silent take-over.
+  const next = await context.newPage();
+  watchErrors(next, errors);
+  await next.goto('/');
+  await expect(next.locator('.resume')).toContainText('Dana');
+  await expect(next.locator('#lobbybar')).toBeHidden();
+  await next.locator('#fresh').click();
+  await expect(next.locator('#pin')).toBeVisible();
+  await next.reload();
+  await expect(next.locator('#pin')).toBeVisible();
+  await next.close();
+
+  // A student who closed their own tab reopens the site and confirms it is them.
+  const again = await join(context, pin, 'Erlan', 4, errors);
+  await again.close();
+  const back = await context.newPage();
+  watchErrors(back, errors);
+  await back.goto('/');
+  await expect(back.locator('.resume')).toContainText('Erlan');
+  await back.locator('#continue').click();
+  await expect(back.locator('#lobbybar')).toBeVisible();
   expect(errors).toEqual([]);
 });

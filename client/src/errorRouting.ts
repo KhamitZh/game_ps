@@ -1,6 +1,6 @@
 import type { ErrorCode } from '../../shared/src/protocol';
 
-export type Stage = 'home' | 'name' | 'char' | 'connecting' | 'game' | 'results';
+export type Stage = 'home' | 'resume' | 'name' | 'char' | 'connecting' | 'game' | 'results';
 export type ErrorAction = 'reload' | 'home' | 'name' | 'char' | 'ignore' | 'toast' | 'toastCloseQuestion';
 
 const NAME_ERRORS: ErrorCode[] = ['NAME_TAKEN', 'NAME_INVALID'];

@@ -14,7 +14,7 @@ import { byId } from './ui/dom';
 import { Hud } from './ui/hud';
 import { renderResults } from './ui/podium';
 import { QuestionModal } from './ui/question';
-import { renderCharacters, renderHome, renderName } from './ui/screens';
+import { renderCharacters, renderHome, renderName, renderResume } from './ui/screens';
 import { SpectateBar } from './ui/spectate';
 import { toast } from './ui/toast';
 import { mountTopBar } from './ui/topbar';
@@ -61,6 +61,8 @@ const app = {
   prompt: null as Prompt,
   pendingTimer: 0,
   joinRetries: 0,
+  /** A seat found in shared storage, waiting for the student to confirm it is theirs. */
+  resumeSeat: null as Seat | null,
 };
 
 const spectateBar = new SpectateBar(byId('spectate'), (id) => {
@@ -72,20 +74,22 @@ const spectateBar = new SpectateBar(byId('spectate'), (id) => {
 
 /**
  * The tab's own seat lives in sessionStorage (survives a reload). A copy in localStorage survives a
- * closed tab or a killed phone browser; it is shared by every tab, so it is resumed "softly": the
- * server refuses it while the seat is still open in another tab.
+ * closed tab or a killed phone browser. That copy is shared by every tab and by whoever sits at the
+ * computer next, so it is never resumed silently: the student first confirms it is their name, and
+ * the server still refuses it ("soft") while the seat is open in another tab.
  */
-function readSeat(store: Storage): { pin: string; token: string } | null {
+interface Seat { pin: string; token: string; name: string }
+function readSeat(store: Storage): Seat | null {
   try {
     const s = JSON.parse(store.getItem(SESSION_KEY) ?? 'null');
     if (!s || typeof s.pin !== 'string' || typeof s.token !== 'string' || typeof s.savedAt !== 'number') return null;
     if (Date.now() - s.savedAt > SESSION_TTL_MS) return null;
-    return { pin: s.pin, token: s.token };
+    return { pin: s.pin, token: s.token, name: typeof s.name === 'string' ? s.name : '' };
   } catch {
     return null;
   }
 }
-function loadSession(): { pin: string; token: string; soft: boolean } | null {
+function loadSession(): (Seat & { soft: boolean }) | null {
   try {
     const own = readSeat(sessionStorage);
     if (own) return { ...own, soft: false };
@@ -95,14 +99,22 @@ function loadSession(): { pin: string; token: string; soft: boolean } | null {
     return null;
   }
 }
-function saveSession(pin: string, token: string): void {
-  const v = JSON.stringify({ pin, token, savedAt: Date.now() });
+function saveSession(pin: string, token: string, name: string): void {
+  const v = JSON.stringify({ pin, token, name, savedAt: Date.now() });
   for (const store of [() => sessionStorage, () => localStorage]) {
     try {
       store().setItem(SESSION_KEY, v);
     } catch {
       // ignore
     }
+  }
+}
+/** Once the game is over nobody needs to get back in from another tab: only this tab keeps the seat. */
+function dropSharedSeat(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // ignore
   }
 }
 function clearSession(): void {
@@ -127,6 +139,8 @@ function render(): void {
   switch (app.stage) {
     case 'home':
       return renderHome(ui.screen, { pin: app.pin, error: app.error }, submitPin);
+    case 'resume':
+      return renderResume(ui.screen, app.resumeSeat?.name ?? '', resumeSharedSeat, startFresh);
     case 'name':
       return renderName(ui.screen, { name: app.name, error: app.error }, (n) => { app.name = n; go('char'); }, () => go('home'), (n) => { app.name = n; });
     case 'char':
@@ -235,7 +249,9 @@ function onMessage(m: ServerMsg): void {
 }
 
 async function onWelcome(m: Extract<ServerMsg, { t: 'welcome' }>): Promise<void> {
-  saveSession(app.pin, m.token);
+  saveSession(app.pin, m.token, m.you.name);
+  // An ended game is not worth a shared copy (see dropSharedSeat).
+  if (m.phase.phase === 'ENDED') dropSharedSeat();
   app.hello = { t: 'resume', token: m.token };
   app.you = m.you;
   app.roster = m.roster;
@@ -375,6 +391,7 @@ function onAnswerResult(roomId: RoomId, correct: boolean): void {
 
 function onEnded(ranking: RankedPlayer[]): void {
   app.ranking = ranking;
+  dropSharedSeat();
   app.stopCountdown?.();
   ui.modal.close();
   clearTimeout(app.pendingTimer);
@@ -480,13 +497,31 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('online', () => app.conn?.wake());
 
+function resumeSharedSeat(): void {
+  const seat = app.resumeSeat;
+  app.resumeSeat = null;
+  if (!seat) return go('home');
+  app.pin = seat.pin;
+  connect({ t: 'resume', token: seat.token, soft: true });
+}
+
+/** "That is not me": forget the other student's seat and start at the PIN form. */
+function startFresh(): void {
+  app.resumeSeat = null;
+  clearSession();
+  go('home');
+}
+
 const session = loadSession();
 // A link with another PIN means a new game: do not drop the student back into an old one.
 const linkPin = new URLSearchParams(location.search).get('pin')?.replace(/\D/g, '');
 if (session && linkPin && linkPin !== session.pin) clearSession();
-if (session && !(linkPin && linkPin !== session.pin)) {
-  app.pin = session.pin;
-  connect(session.soft ? { t: 'resume', token: session.token, soft: true } : { t: 'resume', token: session.token });
-} else {
+if (!session || (linkPin && linkPin !== session.pin)) {
   go('home');
+} else if (session.soft) {
+  app.resumeSeat = session;
+  go('resume');
+} else {
+  app.pin = session.pin;
+  connect({ t: 'resume', token: session.token });
 }

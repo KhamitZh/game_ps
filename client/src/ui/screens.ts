@@ -27,6 +27,21 @@ export function renderHome(root: HTMLElement, opts: { pin: string; error?: strin
   input.focus();
 }
 
+/** Asks before taking over a seat left on this device: the next student must not play as the last one. */
+export function renderResume(root: HTMLElement, name: string, onContinue: () => void, onFresh: () => void): void {
+  root.innerHTML = `
+    <div class="card panel stack resume">
+      <h1 class="logo">${t('app.title')}</h1>
+      <p class="sub">${t('resume.question', { name: `<b>${escapeHtml(name || '?')}</b>` })}</p>
+      <div class="row">
+        <button class="btn" type="button" id="fresh">${t('resume.fresh')}</button>
+        <button class="btn btn-gold" type="button" id="continue">${t('resume.continue')}</button>
+      </div>
+    </div>`;
+  root.querySelector('#continue')!.addEventListener('click', onContinue);
+  root.querySelector('#fresh')!.addEventListener('click', onFresh);
+}
+
 export function renderName(
   root: HTMLElement,
   opts: { name: string; error?: string },
