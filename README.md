@@ -71,8 +71,9 @@ Run `npm test` to validate, then redeploy the server.
    ```
 2. **Vercel (site)** — push the repo to GitHub, import it in Vercel, set **Root Directory** = `client`,
    framework = Vite, and add the environment variable `VITE_SERVER_URL=https://key-house.<you>.workers.dev`.
-3. Lock CORS: set `ALLOWED_ORIGIN` in `server/wrangler.toml` to your Vercel URL (several origins can be
-   separated by commas) and redeploy.
+3. Lock CORS: `ALLOWED_ORIGIN` in `server/wrangler.toml` is the production site
+   (`https://game-ps.vercel.app`; several origins can be separated by commas). Change it if your Vercel URL differs,
+   then redeploy. Local dev overrides it with `ALLOWED_ORIGIN=*` from `server/.dev.vars`.
 
 Game creation (the host password) is limited to 10 attempts per IP per minute (`[[ratelimits]]` in
 `server/wrangler.toml`). Use a long host password anyway.
