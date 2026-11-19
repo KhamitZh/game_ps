@@ -19,12 +19,12 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden;
-  touch-action: none; -webkit-user-select: none; user-select: none;
+  -webkit-user-select: none; user-select: none;
 }
 input { -webkit-user-select: text; user-select: text; }
 [hidden] { display: none !important; }
 
-#game { position: fixed; inset: 0; }
+#game { position: fixed; inset: 0; touch-action: none; }
 #ui { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
 #ui > * { pointer-events: auto; }
 #hud, #lobbybar, #spectate, #touch, #toasts { pointer-events: none; }
@@ -35,6 +35,7 @@ input { -webkit-user-select: text; user-select: text; }
 .btn {
   font: inherit; font-weight: 600; color: var(--text); background: var(--panel-2); border: 3px solid var(--line);
   border-radius: var(--radius); padding: 10px 16px; cursor: pointer; box-shadow: 0 3px 0 #0008;
+  touch-action: manipulation;
 }
 .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #0008; }
 .btn:disabled { opacity: .5; cursor: default; }
@@ -47,6 +48,10 @@ input { -webkit-user-select: text; user-select: text; }
 }
 .error { color: var(--bad); min-height: 1.3em; margin: 4px 0 0; font-size: 14px; }
 .label { color: var(--muted); font-size: 14px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0; max-width: 420px; }
+.hint.warn { color: var(--gold); }
+.q-left { margin-left: auto; font-variant-numeric: tabular-nums; }
+.results .leave { margin-top: 14px; }
 .stack { display: grid; gap: 12px; }
 
 #screen { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; overflow: auto; background: radial-gradient(circle at 50% 30%, #2b2550, var(--bg)); }
@@ -80,6 +85,15 @@ canvas.pix { image-rendering: pixelated; width: 32px; height: 48px; }
 .q-card { width: min(640px, 100%); max-height: 100%; overflow: auto; }
 .q-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; gap: 8px; }
 .q-text { font-size: clamp(18px, 4.5vw, 26px); font-weight: 600; margin: 12px 0 16px; line-height: 1.3; white-space: pre-wrap; overflow-wrap: anywhere; }
+.q-code {
+  font: 500 clamp(15px, 3.6vw, 20px)/1.45 ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  background: #0006; border: 2px solid var(--line); border-radius: var(--radius); padding: 10px 12px;
+  margin: 0 0 16px; white-space: pre; overflow-x: auto; tab-size: 4; -webkit-user-select: text; user-select: text;
+}
+.q-opt .opt-text.mono { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; white-space: pre-wrap; }
+.q-timer { height: 6px; border-radius: 3px; background: #fff2; overflow: hidden; margin-top: 10px; }
+.q-timer > div { height: 100%; background: var(--gold); transition: width .25s linear; }
+.q-timer.low > div { background: #e5484d; }
 .q-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 420px) { .q-opts { grid-template-columns: 1fr; } }
 .q-opt { min-height: 60px; font-size: 18px; text-align: left; display: flex; gap: 10px; align-items: center; color: #fff; border-color: #0005; }
@@ -146,3 +160,18 @@ canvas.pix { image-rendering: pixelated; width: 32px; height: 48px; }
 }
 .seg-opt input:checked + span { background: var(--gold); border-color: var(--gold-d); color: #2a2000; }
 .seg-opt input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* host live map */
+.live-wrap { display: grid; gap: 8px; margin-top: 16px; }
+.live-tabs { gap: 6px; flex-wrap: wrap; justify-content: flex-start; }
+.live { position: relative; height: min(64vh, 680px); min-height: 320px; border: 3px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #14121f; touch-action: none; }
+.live canvas { display: block; }
+.live-parking { position: fixed; left: -10000px; top: 0; width: 800px; height: 480px; overflow: hidden; pointer-events: none; }
+.live-parking .live { height: 100%; }
+.sel-card { display: flex; gap: 12px; align-items: center; background: var(--panel); border: 3px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+.sel-card .sel-fig canvas { image-rendering: pixelated; width: 32px; height: 48px; }
+.sel-card .sel-name { font-size: 18px; }
+.sel-card #selClose { margin-left: auto; }
+.table tbody tr { cursor: pointer; }
+.table tr.sel td { background: #7cffb222; }
+

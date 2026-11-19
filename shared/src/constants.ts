@@ -7,6 +7,8 @@ export const PIN_LENGTH = 6;
 export const SPEED = 160;
 export const TICK_MS = 100;
 export const COUNTDOWN_MS = 3000;
+/** How long a player has for one question, counted from its first opening (closing it does not pause). */
+export const QUESTION_TIME_MS = 60_000;
 export const INTERACT_RADIUS = TILE * 1.5;
 export const ROOMS_PER_FLOOR = 5;
 export const TOTAL_ROOMS = 10;

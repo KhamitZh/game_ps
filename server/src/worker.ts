@@ -1,22 +1,24 @@
 import { DEFAULT_TIME_LIMIT_MIN, MAX_TIME_LIMIT_MIN, MIN_TIME_LIMIT_MIN } from '../../shared/src/constants';
 import { DEFAULT_LEVEL, isLevelId, resolveSelection } from '../../shared/src/levels';
+import { allowOrigin } from './cors';
 import type { Env } from './env';
 import { GameRoom } from './GameRoom';
 
 export { GameRoom };
 
-function corsHeaders(env: Env): Record<string, string> {
+function corsHeaders(env: Env, req: Request): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
+    'Access-Control-Allow-Origin': allowOrigin(env.ALLOWED_ORIGIN, req.headers.get('Origin')),
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'content-type',
+    Vary: 'Origin',
   };
 }
 
-function json(env: Env, body: unknown, status = 200): Response {
+function json(env: Env, req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json', ...corsHeaders(env) },
+    headers: { 'content-type': 'application/json', ...corsHeaders(env, req) },
   });
 }
 
@@ -37,14 +39,19 @@ function room(env: Env, pin: string) {
 }
 
 async function createGame(req: Request, env: Env): Promise<Response> {
+  if (env.CREATE_LIMITER) {
+    const ip = req.headers.get('CF-Connecting-IP') ?? 'unknown';
+    const { success } = await env.CREATE_LIMITER.limit({ key: `create:${ip}` });
+    if (!success) return json(env, req, { error: 'RATE_LIMITED' }, 429);
+  }
   let body: { password?: unknown; timeLimitMin?: unknown; level?: unknown; subtopic?: unknown; difficulty?: unknown };
   try {
     body = await req.json();
   } catch {
-    return json(env, { error: 'BAD_REQUEST' }, 400);
+    return json(env, req, { error: 'BAD_REQUEST' }, 400);
   }
   if (!env.HOST_PASSWORD || typeof body.password !== 'string' || !safeEqual(body.password, env.HOST_PASSWORD)) {
-    return json(env, { error: 'BAD_PASSWORD' }, 403);
+    return json(env, req, { error: 'BAD_PASSWORD' }, 403);
   }
   const requested = Number(body.timeLimitMin);
   const timeLimitMin = Number.isFinite(requested)
@@ -52,32 +59,32 @@ async function createGame(req: Request, env: Env): Promise<Response> {
     : DEFAULT_TIME_LIMIT_MIN;
   const level = isLevelId(body.level) ? body.level : DEFAULT_LEVEL;
   const selection = resolveSelection(level, body.subtopic, body.difficulty);
-  if (!selection) return json(env, { error: 'BAD_SELECTION' }, 400);
+  if (!selection) return json(env, req, { error: 'BAD_SELECTION' }, 400);
   const hostToken = crypto.randomUUID();
   for (let attempt = 0; attempt < 10; attempt++) {
     const pin = randomPin();
     if (await room(env, pin).init({ pin, timeLimitMin, selection, hostToken })) {
-      return json(env, { pin, hostToken, timeLimitMin, ...selection });
+      return json(env, req, { pin, hostToken, timeLimitMin, ...selection });
     }
   }
-  return json(env, { error: 'BUSY' }, 503);
+  return json(env, req, { error: 'BUSY' }, 503);
 }
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
-    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env) });
-    if (url.pathname === '/') return new Response('Key House server OK', { headers: corsHeaders(env) });
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(env, req) });
+    if (url.pathname === '/') return new Response('Key House server OK', { headers: corsHeaders(env, req) });
     if (url.pathname === '/api/create' && req.method === 'POST') return createGame(req, env);
 
     const info = url.pathname.match(/^\/api\/game\/(\d{6})$/);
-    if (info && req.method === 'GET') return json(env, await room(env, info[1]).info());
+    if (info && req.method === 'GET') return json(env, req, await room(env, info[1]).info());
 
     const ws = url.pathname.match(/^\/ws\/(\d{6})$/);
     if (ws) {
       if (req.headers.get('Upgrade') !== 'websocket') return new Response('Expected WebSocket', { status: 426 });
       return room(env, ws[1]).fetch(req);
     }
-    return new Response('Not found', { status: 404, headers: corsHeaders(env) });
+    return new Response('Not found', { status: 404, headers: corsHeaders(env, req) });
   },
 } satisfies ExportedHandler<Env>;

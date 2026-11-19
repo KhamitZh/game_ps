@@ -47,7 +47,18 @@ Rules (checked at server start and by `npm test`):
 - every question: non-empty text, 4 different options, `correct` 0–3, no duplicate text within a level.
 
 Each player gets a different question from the game's pool in every one of the 10 rooms, with shuffled options.
-Use `\n` in `q` for multi-line code. Run `npm test` to validate, then redeploy the server.
+With a single subtopic (10 questions per difficulty) every player gets the same set in a different order — the host
+panel says so; pick "all subtopics" for different questions.
+Use `\n` in `q` for multi-line code: the first line is the prompt, the rest is shown as a monospace code block.
+A player has 60 s per question (`QUESTION_TIME_MS` in `shared/src/constants.ts`), counted from the first opening;
+after that the room counts as answered wrong.
+
+**Translations.** A question may carry `"i18n": { "ru": { "q": "...", "options": [...] }, "en": {...} }` with the
+options in the same order. Players see their language and fall back to Kazakh. Python questions are fully translated
+(`TR`, `STEM_TR`, `OUTPUT_TR` in the generator, which refuses an untranslated Python question); the other levels
+are Kazakh only for now — add entries to `TR` to translate them.
+
+Run `npm test` to validate, then redeploy the server.
 
 ## Deploy
 
@@ -60,6 +71,10 @@ Use `\n` in `q` for multi-line code. Run `npm test` to validate, then redeploy t
    ```
 2. **Vercel (site)** — push the repo to GitHub, import it in Vercel, set **Root Directory** = `client`,
    framework = Vite, and add the environment variable `VITE_SERVER_URL=https://key-house.<you>.workers.dev`.
-3. Optionally lock CORS: set `ALLOWED_ORIGIN` in `server/wrangler.toml` to your Vercel URL and redeploy.
+3. Lock CORS: set `ALLOWED_ORIGIN` in `server/wrangler.toml` to your Vercel URL (several origins can be
+   separated by commas) and redeploy.
+
+Game creation (the host password) is limited to 10 attempts per IP per minute (`[[ratelimits]]` in
+`server/wrangler.toml`). Use a long host password anyway.
 
 Host page in production: `https://<your-site>.vercel.app/host`.

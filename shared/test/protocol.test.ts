@@ -25,6 +25,9 @@ describe('parseClientMsg', () => {
   it('validates room ids and answers', () => {
     expect(parse({ t: 'interact', roomId: 'f1r3' })).toEqual({ t: 'interact', roomId: 'f1r3' });
     expect(parse({ t: 'interact', roomId: 'f3r1' })).toBeNull();
+    expect(parse({ t: 'interact', roomId: 'f1r3', lang: 'ru' })).toEqual({ t: 'interact', roomId: 'f1r3', lang: 'ru' });
+    expect(parse({ t: 'interact', roomId: 'f1r3', lang: 'de' })).toBeNull();
+    expect(parse({ t: 'answer', roomId: 'f2r5', optionIndex: -1 })).toEqual({ t: 'answer', roomId: 'f2r5', optionIndex: -1 });
     expect(parse({ t: 'answer', roomId: 'f2r5', optionIndex: 2 }))
       .toEqual({ t: 'answer', roomId: 'f2r5', optionIndex: 2 });
     expect(parse({ t: 'answer', roomId: 'f2r5', optionIndex: 'x' })).toBeNull();
@@ -43,5 +46,10 @@ describe('parseClientMsg', () => {
     expect(parse({ t: 'hack' })).toBeNull();
     expect(parse(null)).toBeNull();
     expect(parseClientMsg('x'.repeat(5000))).toBeNull();
+  });
+
+  it('keeps the soft flag of a resume only when it is exactly true', () => {
+    expect(parse({ t: 'resume', token: 'tok', soft: true })).toEqual({ t: 'resume', token: 'tok', soft: true });
+    expect(parse({ t: 'resume', token: 'tok', soft: 'yes' })).toEqual({ t: 'resume', token: 'tok' });
   });
 });

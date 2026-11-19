@@ -89,5 +89,14 @@
   "status.lobby": "In the hall",
   "status.playing": "Playing",
   "status.finished": "Finished",
-  "status.offline": "Offline"
+  "status.offline": "Offline",
+  "question.timeLeft": "Time left",
+  "question.timeUp": "Time is up",
+  "results.leave": "Back to home page",
+  "error.RATE_LIMITED": "Too many attempts. Try again in a minute.",
+  "host.subtopicHint": "One subtopic has only 10 questions per difficulty: every student gets the same questions (in a different order). Pick \"All subtopics\" for different questions.",
+  "host.poolWarning": "This game has {n} questions: every student gets the same questions, only in a different order.",
+  "error.SEAT_IN_USE": "This seat is open in another tab",
+  "host.view.all": "All",
+  "host.live.hint": "Click a player on the map or in the table to see the details."
 }

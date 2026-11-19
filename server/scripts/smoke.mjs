@@ -103,6 +103,9 @@ const fix = await alice.wait((m) => m.t === 'teleport');
 check(fix.x === tp.x && fix.y === tp.y, 'teleport-sized move is corrected');
 
 check((await alice.wait((m) => m.t === 'snapshot' && m.players.length >= 2)).players.length >= 2, 'snapshots stream');
+// The host's inbox still holds lobby snapshots from before the start: wait for one from floor 1.
+const hostSnap = await host.wait((m) => m.t === 'snapshot' && m.players.length === 2 && m.players.every((e) => e.floor === 'f1'));
+check(hostSnap.players.length === 2, 'host gets every player for the live map');
 
 bob.close();
 await sleep(300);

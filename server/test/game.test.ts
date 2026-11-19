@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { COUNTDOWN_MS } from '../../shared/src/constants';
+import { COUNTDOWN_MS, QUESTION_TIME_MS } from '../../shared/src/constants';
 import { LEVEL_IDS, type PoolSelection } from '../../shared/src/levels';
 import { MAPS, ROOMS, ROOM_IDS, STAIRS_ARRIVAL, tileCenter, type RoomId } from '../../shared/src/map';
-import { Game, type GameDeps } from '../src/game';
+import { ANSWER_GRACE_MS, Game, type GameDeps } from '../src/game';
 import { selectPool, type QuestionBank } from '../src/questions';
 
 /** Exactly one question per room, so a full run must use every question once. */
@@ -450,6 +450,19 @@ describe('spectating and snapshots', () => {
     expect(g.snapshotFor('lobby')).toEqual([]);
   });
 
+  it('gives the host every online player on every floor, each tagged with its floor', () => {
+    const g = newGame();
+    const a = join(g, 'A');
+    const b = join(g, 'B');
+    const c = join(g, 'C');
+    startPlaying(g);
+    for (const id of ROOM_IDS.slice(0, 5)) solve(g, b.id, id);
+    standAt(g, b.id, 'f2r1');
+    g.setOnline(c.id, false);
+    const all = g.snapshotFor(null);
+    expect(all.map((e) => [e.id, e.floor])).toEqual([[a.id, 'f1'], [b.id, 'f2']]);
+  });
+
   it('shows a finished player the floor of the player they watch', () => {
     const g = newGame();
     const a = join(g, 'A');
@@ -516,5 +529,127 @@ describe('persistence', () => {
     const g2 = Game.fromData(data, BANK, deps());
     standAt(g2, p.id, ROOM_IDS[0]);
     expect(g2.interact(p.id, ROOM_IDS[0])).toEqual({ ok: false, code: 'NO_QUESTION' });
+  });
+});
+
+describe('storage cleanup', () => {
+  const KEEP_MS = 3 * 60 * 60 * 1000;
+
+  it('a lobby that was never started is due for cleanup right away', () => {
+    const g = newGame();
+    join(g, 'Aru');
+    expect(g.cleanupAt(KEEP_MS)).toBeLessThanOrEqual(clock);
+  });
+
+  it('a countdown waits until the countdown ends', () => {
+    const g = newGame();
+    join(g, 'Aru');
+    g.start();
+    expect(g.cleanupAt(KEEP_MS)).toBe(clock + COUNTDOWN_MS);
+  });
+
+  it('a running game waits until its time limit', () => {
+    const g = newGame(10);
+    join(g, 'Aru');
+    startPlaying(g);
+    expect(g.cleanupAt(KEEP_MS)).toBe(g.endsAt);
+  });
+
+  it('an ended game keeps its results for the keep period', () => {
+    const g = newGame();
+    join(g, 'Aru');
+    startPlaying(g);
+    g.stop();
+    expect(g.cleanupAt(KEEP_MS)).toBe(g.endedAt! + KEEP_MS);
+  });
+
+  it('a game everyone left mid-play ends on tick once its time is up, then becomes due', () => {
+    const g = newGame(10);
+    const p = join(g, 'Aru');
+    startPlaying(g);
+    g.setOnline(p.id, false);
+    clock = g.endsAt!;
+    expect(g.tick()).toBe(true);
+    expect(g.phase).toBe('ENDED');
+    expect(g.cleanupAt(KEEP_MS)).toBe(clock + KEEP_MS);
+    clock += KEEP_MS;
+    expect(g.cleanupAt(KEEP_MS)).toBeLessThanOrEqual(clock);
+  });
+});
+
+describe('question time limit', () => {
+  function opened() {
+    const g = newGame();
+    const p = join(g, 'Aru');
+    startPlaying(g);
+    standAt(g, p.id, 'f1r1');
+    const q = g.interact(p.id, 'f1r1');
+    if (!q.ok) throw new Error(q.code);
+    return { g, p, q: q.question };
+  }
+
+  it('gives every question a deadline from the first opening, and reopening keeps it', () => {
+    const { g, p, q } = opened();
+    expect(q.deadline).toBe(clock + QUESTION_TIME_MS);
+    clock += 10_000;
+    const again = g.interact(p.id, 'f1r1');
+    expect(again.ok && again.question.deadline).toBe(q.deadline);
+  });
+
+  it('accepts the right answer within the limit plus network grace', () => {
+    const { g, p } = opened();
+    clock += QUESTION_TIME_MS + ANSWER_GRACE_MS;
+    expect(g.answer(p.id, 'f1r1', displayedCorrect(g, p.id, 'f1r1'))).toMatchObject({ ok: true, correct: true });
+  });
+
+  it('counts a late answer as wrong even when it is the right option', () => {
+    const { g, p } = opened();
+    clock += QUESTION_TIME_MS + ANSWER_GRACE_MS + 1;
+    expect(g.answer(p.id, 'f1r1', displayedCorrect(g, p.id, 'f1r1'))).toMatchObject({ ok: true, correct: false });
+    expect(g.players.get(p.id)!.answered.f1r1).toBe('wrong');
+  });
+
+  it('treats optionIndex -1 as "time ran out": the room is used up without a key', () => {
+    const { g, p } = opened();
+    expect(g.answer(p.id, 'f1r1', -1)).toMatchObject({ ok: true, correct: false });
+    expect(g.players.get(p.id)!.keys).toBe(0);
+    expect(g.answer(p.id, 'f1r2', -2)).toEqual({ ok: false, code: 'BAD_REQUEST' });
+  });
+});
+
+describe('question languages', () => {
+  const RU = POOL.map((x) => ({ ...x, i18n: { ru: { q: `ru-${x.q}`, options: x.options.map((o) => `ru-${o}`) } } }));
+  const TR_BANK = { ...BANK, numsys: RU } as QuestionBank;
+
+  function view(lang?: 'kk' | 'ru' | 'en') {
+    const g = new Game('123456', 'host-token', 10, NUMSYS, TR_BANK, deps());
+    const p = join(g, 'Aru');
+    startPlaying(g);
+    standAt(g, p.id, 'f1r1');
+    const r = g.interact(p.id, 'f1r1', lang);
+    if (!r.ok) throw new Error(r.code);
+    return { g, p, q: r.question };
+  }
+
+  it('shows the translation for the requested language, with options in the same shuffled order', () => {
+    const { g, p, q } = view('ru');
+    expect(q.q.startsWith('ru-q')).toBe(true);
+    const a = g.players.get(p.id)!.assigned.f1r1!;
+    expect(q.options).toEqual(a.order.map((i) => RU[a.qIndex].i18n.ru.options[i]));
+  });
+
+  it('falls back to Kazakh when there is no translation', () => {
+    expect(view('en').q.q.startsWith('q')).toBe(true);
+    expect(view('kk').q.q.startsWith('q')).toBe(true);
+  });
+
+  it('uses the language the player joined with when the request names none', () => {
+    const g = new Game('123456', 'host-token', 10, NUMSYS, TR_BANK, deps());
+    const r = g.addPlayer('Aru', 0, 'ru');
+    if (!r.ok) throw new Error(r.code);
+    startPlaying(g);
+    standAt(g, r.player.id, 'f1r1');
+    const q = g.interact(r.player.id, 'f1r1');
+    expect(q.ok && q.question.q.startsWith('ru-')).toBe(true);
   });
 });

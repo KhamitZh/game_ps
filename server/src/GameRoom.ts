@@ -52,9 +52,16 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   async alarm(): Promise<void> {
-    if (this.game && (this.game.phase === 'PLAYING' || this.game.phase === 'COUNTDOWN')) {
-      await this.ctx.storage.setAlarm(Date.now() + 60 * 60 * 1000);
-      return;
+    const game = this.game;
+    if (game) {
+      // The tick timer only runs while someone is connected: a game everyone left is advanced here.
+      if (game.tick()) this.afterPhaseChange();
+      const at = game.cleanupAt(CLEANUP_AFTER_MS);
+      if (at > Date.now()) {
+        await this.persist();
+        await this.ctx.storage.setAlarm(at);
+        return;
+      }
     }
     for (const ws of this.sessions.keys()) ws.close(1001, 'expired');
     this.sessions.clear();
@@ -112,6 +119,8 @@ export class GameRoom extends DurableObject<Env> {
       } else if (msg.t === 'resume') {
         const p = game.resume(msg.token);
         if (!p) return this.send(ws, { t: 'error', code: 'BAD_TOKEN' });
+        const held = [...this.sessions].some(([other, os]) => other !== ws && os.conn.kind === 'player' && os.conn.id === p.id);
+        if (msg.soft && held) return this.send(ws, { t: 'error', code: 'SEAT_IN_USE' });
         for (const [other, os] of this.sessions) {
           if (other !== ws && os.conn.kind === 'player' && os.conn.id === p.id) {
             this.sessions.delete(other);
@@ -133,6 +142,7 @@ export class GameRoom extends DurableObject<Env> {
           level: game.selection.level,
           subtopic: game.selection.subtopic,
           difficulty: game.selection.difficulty,
+          poolSize: game.poolSize,
           phase: game.phaseInfo(),
           roster: game.roster(),
           ranking: game.phase === 'ENDED' ? game.ranking() : null,
@@ -157,7 +167,7 @@ export class GameRoom extends DurableObject<Env> {
         return;
       }
       case 'interact': {
-        const r = game.interact(id, msg.roomId);
+        const r = game.interact(id, msg.roomId, msg.lang);
         this.send(ws, r.ok ? { t: 'question', question: r.question } : { t: 'error', code: r.code });
         if (r.ok) void this.persist();
         return;
@@ -237,12 +247,15 @@ export class GameRoom extends DurableObject<Env> {
 
   private broadcastSnapshots(game: Game): void {
     if (game.phase === 'ENDED') return;
-    const cache = new Map<FloorId, string>();
+    const cache = new Map<FloorId | null, string>();
     for (const [ws, s] of this.sessions) {
-      if (s.conn.kind !== 'player') continue;
-      const p = game.players.get(s.conn.id);
-      if (!p) continue;
-      const floor = game.viewFloor(p);
+      if (s.conn.kind === 'pending') continue;
+      let floor: FloorId | null = null;
+      if (s.conn.kind === 'player') {
+        const p = game.players.get(s.conn.id);
+        if (!p) continue;
+        floor = game.viewFloor(p);
+      }
       let payload = cache.get(floor);
       if (!payload) {
         const msg: ServerMsg = { t: 'snapshot', players: game.snapshotFor(floor) };

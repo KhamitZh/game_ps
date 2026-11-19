@@ -71,6 +71,9 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
   const p1 = await join(context, pin, 'Аян', 0, errors);
   const p2 = await join(context, pin, 'Bota', 5, errors);
   await expect(page.locator('#rows tr')).toHaveCount(2);
+  // The host's live map shows both players walking in the lobby.
+  await expect(page.locator('.live canvas')).toBeVisible();
+  await expect(page.locator('.live')).toHaveAttribute('data-count', '2');
 
   // Review Focus 4: same Cyrillic name, other case
   const dup = await startJoin(context, pin, 'аЯН', 2, errors);
@@ -81,6 +84,12 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
   await page.locator('#start').click();
   await expect(p1.locator('#hud')).toBeVisible({ timeout: 10_000 });
   await expect(p1.locator('#hud')).toContainText('0/10');
+  // Both players are now on floor 1 of the host's map; picking one in the table shows their card.
+  await expect(page.locator('.live')).toHaveAttribute('data-count', '2');
+  await page.locator('.live-tabs button[data-view=f1]').click();
+  await page.locator('#rows tr', { hasText: 'Bota' }).click();
+  await expect(page.locator('.sel-card')).toContainText('Bota');
+  await expect(page.locator('#rows tr.sel')).toHaveCount(1);
 
   await p1.bringToFront();
   await p1.keyboard.down('ArrowRight');
@@ -88,11 +97,14 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
   await p1.keyboard.up('ArrowRight');
 
   // Review Focus 2: player reload keeps the game
+  // A student reloads the page they are looking at; Phaser pauses in a hidden tab and would not boot.
+  await p2.bringToFront();
   await p2.reload();
   await expect(p2.locator('#hud')).toBeVisible({ timeout: 10_000 });
   await expect(p2.locator('#screen')).toBeEmpty();
 
   // Review Focus 3: host reload keeps the dashboard
+  await page.bringToFront();
   await page.reload();
   await expect(page.locator('.pin')).toHaveText(pin);
   await expect(page.locator('#rows tr')).toHaveCount(2);
@@ -104,6 +116,11 @@ test('full round: join, start, play, reload, stop, results', async ({ page, cont
     await expect(p.locator('.myplace')).toBeVisible();
   }
   await expect(page.locator('.podium')).toBeVisible();
+  // "Back to home page" leaves the finished game: the PIN form is shown and a reload stays there.
+  await p1.locator('.results .leave').click();
+  await expect(p1.locator('#pin')).toBeVisible();
+  await p1.reload();
+  await expect(p1.locator('#pin')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -135,7 +152,7 @@ test('a locked question modal is cleared after a reconnect', async ({ page, cont
   await page.locator('#start').click();
   await expect(p.locator('#hud')).toBeVisible({ timeout: 10_000 });
 
-  routes.at(-1)!.send(JSON.stringify({ t: 'question', question: { roomId: 'f1r1', q: 'Test?', options: ['a', 'b', 'c', 'd'] } }));
+  routes.at(-1)!.send(JSON.stringify({ t: 'question', question: { roomId: 'f1r1', q: 'Test?', options: ['a', 'b', 'c', 'd'], deadline: Date.now() + 60_000 } }));
   await expect(p.locator('#modal')).toBeVisible();
   dropAnswers = true;
   await p.locator('.q-opt').first().click();

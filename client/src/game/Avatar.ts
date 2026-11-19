@@ -10,15 +10,17 @@ export class Avatar {
   private character: number;
   private dir: Dir = 'down';
   private moving = false;
+  private readonly baseColor: string;
 
   constructor(scene: Phaser.Scene, character: number, name: string, isMe = false) {
     this.character = character;
+    this.baseColor = isMe ? '#ffe066' : '#ffffff';
     this.sprite = scene.add.sprite(0, 0, charKey(character), 'down-0').setOrigin(0.5, 1).setScale(2);
     this.label = scene.add
       .text(0, 0, name, {
         fontFamily: 'Rubik, sans-serif',
         fontSize: '12px',
-        color: isMe ? '#ffe066' : '#ffffff',
+        color: this.baseColor,
         stroke: '#000000',
         strokeThickness: 3,
         resolution: 2,
@@ -52,6 +54,11 @@ export class Avatar {
       this.sprite.stop();
       this.sprite.setFrame(`${dir}-0`);
     }
+  }
+
+  /** Marks the player the host picked on the live map. */
+  setHighlight(on: boolean): void {
+    this.label.setColor(on ? '#7cffb2' : this.baseColor).setBackgroundColor(on ? '#000000aa' : '');
   }
 
   setVisible(v: boolean): void {

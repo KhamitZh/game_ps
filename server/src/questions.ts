@@ -1,3 +1,4 @@
+import { LANGS, type Lang } from '../../shared/src/constants';
 import {
   ALL_SUBTOPICS, DIFFICULTIES, LEVEL_IDS, MAX_LEVEL_QUESTIONS, MIN_LEVEL_QUESTIONS,
   hasSubtopics, isDifficulty, subtopicIds, type Difficulty, type LevelId, type PoolSelection,
@@ -10,6 +11,35 @@ export interface Question {
   correct: number;
   /** Present on every question of a level that is split into subtopics. */
   difficulty?: Difficulty;
+  /** Translations; options keep the same order, so `correct` holds for them too. Kazakh is `q`/`options`. */
+  i18n?: Partial<Record<Exclude<Lang, 'kk'>, { q: string; options: string[] }>>;
+}
+
+const TRANSLATED = LANGS.filter((l) => l !== 'kk') as readonly string[];
+
+function checkText(q: unknown, options: unknown, where: string, errors: string[]): void {
+  if (typeof q !== 'string' || !q.trim()) errors.push(`${where}.q: non-empty string required`);
+  if (!Array.isArray(options) || options.length !== 4 || options.some((o) => typeof o !== 'string' || !o.trim())) {
+    errors.push(`${where}.options: exactly 4 non-empty strings required`);
+  } else if (new Set(options.map((o: string) => o.trim())).size !== 4) {
+    errors.push(`${where}.options: options must be different`);
+  }
+}
+
+function checkTranslations(i18n: unknown, where: string, errors: string[]): void {
+  if (i18n === undefined) return;
+  if (!i18n || typeof i18n !== 'object' || Array.isArray(i18n)) {
+    errors.push(`${where}.i18n: object required`);
+    return;
+  }
+  for (const [lang, tr] of Object.entries(i18n)) {
+    if (!TRANSLATED.includes(lang)) {
+      errors.push(`${where}.i18n.${lang}: unknown language`);
+      continue;
+    }
+    const { q, options } = (tr ?? {}) as Record<string, unknown>;
+    checkText(q, options, `${where}.i18n.${lang}`, errors);
+  }
 }
 /** A flat pool, or one pool per subtopic with a difficulty on every question. */
 export type LevelQuestions = Question[] | Record<string, Question[]>;
@@ -20,7 +50,7 @@ function checkQuestion(item: unknown, where: string, seen: Set<string>, errors: 
     errors.push(`${where}: object expected`);
     return;
   }
-  const { q, options, correct, difficulty } = item as Record<string, unknown>;
+  const { q, options, correct, difficulty, i18n } = item as Record<string, unknown>;
   if (typeof q !== 'string' || !q.trim()) errors.push(`${where}.q: non-empty string required`);
   else if (seen.has(q.trim())) errors.push(`${where}.q: duplicate question in this level`);
   else seen.add(q.trim());
@@ -33,6 +63,7 @@ function checkQuestion(item: unknown, where: string, seen: Set<string>, errors: 
     errors.push(`${where}.correct: integer 0..3 required`);
   }
   if (needsDifficulty && !isDifficulty(difficulty)) errors.push(`${where}.difficulty: ${DIFFICULTIES.join('|')} required`);
+  checkTranslations(i18n, where, errors);
 }
 
 function checkSubtopicLevel(id: LevelId, entry: unknown, errors: string[]): void {

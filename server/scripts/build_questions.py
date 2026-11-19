@@ -584,6 +584,102 @@ L['grade11'] = [
 ]
 
 
+# ---------------------------------------------------------------- translations (ru, en)
+# Options keep their order, so the marked answer stays right. A "what does it print?" question only
+# translates its first line and the «Қате»/«Бос жол» options: every other option is the program's real
+# output and must stay exactly as the code prints it.
+LANGS_TR = ('ru', 'en')
+STEM_TR = {'ru': 'Что выведет программа?\n', 'en': 'What does the program print?\n'}
+OUTPUT_TR = {
+    'ru': {'Қате': 'Ошибка', 'Бос жол': 'Пустая строка'},
+    'en': {'Қате': 'Error', 'Бос жол': 'Empty line'},
+}
+# Kazakh question text -> {lang: (question, [4 options])}
+TR = {
+    'input() функциясы қандай типтегі мән қайтарады?': {
+        'ru': ('Значение какого типа возвращает функция input()?', ['int (целое число)', 'str (строка)', 'float (вещественное число)', 'bool (логическое)']),
+        'en': ('What type of value does input() return?', ['int (integer)', 'str (string)', 'float (real number)', 'bool (boolean)']),
+    },
+    'Python-да бір жолдық түсініктеме (комментарий) қай таңбадан басталады?': {
+        'ru': ('С какого символа начинается однострочный комментарий в Python?', ['//', '#', '--', '/*']),
+        'en': ('Which character starts a one-line comment in Python?', ['//', '#', '--', '/*']),
+    },
+    'Қай айнымалы аты Python-да дұрыс емес?': {
+        'ru': ('Какое имя переменной в Python недопустимо?', ['my_var', '_x', '2name', 'name2']),
+        'en': ('Which variable name is not valid in Python?', ['my_var', '_x', '2name', 'name2']),
+    },
+    'x = input() жолында пайдаланушы 5 енгізді. print(x * 2) нені шығарады?': {
+        'ru': ('В строке x = input() пользователь ввёл 5. Что выведет print(x * 2)?', ['10', '55', '5 5', 'Ошибка']),
+        'en': ('At x = input() the user typed 5. What does print(x * 2) print?', ['10', '55', '5 5', 'Error']),
+    },
+    'Python-да «тең емес» салыстыру амалы қалай жазылады?': {
+        'ru': ('Как в Python записывается сравнение «не равно»?', ['<>', '!=', '=!', '=/=']),
+        'en': ('How is the "not equal" comparison written in Python?', ['<>', '!=', '=!', '=/=']),
+    },
+    'if операторындағы шарттан кейін қандай таңба қойылады?': {
+        'ru': ('Какой символ ставится после условия в операторе if?', [';', ':', '{', 'then']),
+        'en': ('Which character goes after the condition of an if statement?', [';', ':', '{', 'then']),
+    },
+    'Python-да «және» логикалық амалы қай сөзбен жазылады?': {
+        'ru': ('Каким словом в Python записывается логическое «и»?', ['&&', 'and', '&', 'и']),
+        'en': ('Which word is the logical "and" in Python?', ['&&', 'and', '&', 'also']),
+    },
+    'list(range(2, 10, 3)) нәтижесі:': {
+        'ru': ('Результат list(range(2, 10, 3)):', ['[2, 5, 8]', '[2, 3, 4]', '[2, 5, 8, 11]', '[3, 6, 9]']),
+        'en': ('The result of list(range(2, 10, 3)):', ['[2, 5, 8]', '[2, 3, 4]', '[2, 5, 8, 11]', '[3, 6, 9]']),
+    },
+    'Шарт ақиқат болғанша қайталанатын цикл:': {
+        'ru': ('Цикл, который повторяется, пока условие истинно:', ['for', 'while', 'if', 'def']),
+        'en': ('The loop that repeats while a condition is true:', ['for', 'while', 'if', 'def']),
+    },
+    'range(5) неше сан береді?': {
+        'ru': ('Сколько чисел даёт range(5)?', ['4', '5', '6', '0']),
+        'en': ('How many numbers does range(5) give?', ['4', '5', '6', '0']),
+    },
+    'Циклды толық тоқтататын оператор:': {
+        'ru': ('Оператор, который полностью прерывает цикл:', ['continue', 'break', 'pass', 'stop']),
+        'en': ('The statement that stops a loop completely:', ['continue', 'break', 'pass', 'stop']),
+    },
+    'Python-да жолдың ұзындығын қай функция береді?': {
+        'ru': ('Какая функция в Python возвращает длину строки?', ['size()', 'len()', 'length()', 'count()']),
+        'en': ('Which Python function gives the length of a string?', ['size()', 'len()', 'length()', 'count()']),
+    },
+    'Python-да тізімнің бірінші элементінің индексі:': {
+        'ru': ('Индекс первого элемента списка в Python:', ['0', '1', '-1', 'Любое число']),
+        'en': ('The index of the first element of a Python list:', ['0', '1', '-1', 'Any number']),
+    },
+    'Python-да функция қай кілттік сөзбен анықталады?': {
+        'ru': ('Каким ключевым словом в Python объявляется функция?', ['function', 'def', 'func', 'procedure']),
+        'en': ('Which keyword defines a function in Python?', ['function', 'def', 'func', 'procedure']),
+    },
+    'Функциядан мәнді қайтаратын кілттік сөз:': {
+        'ru': ('Ключевое слово, которое возвращает значение из функции:', ['print', 'return', 'back', 'output']),
+        'en': ('The keyword that returns a value from a function:', ['print', 'return', 'back', 'output']),
+    },
+    'def f(a, b): анықтамасындағы a мен b қалай аталады?': {
+        'ru': ('Как называются a и b в определении def f(a, b):?', ['Параметры', 'Модули', 'Циклы', 'Комментарии']),
+        'en': ('What are a and b called in def f(a, b):?', ['Parameters', 'Modules', 'Loops', 'Comments']),
+    },
+}
+
+
+def translate(where, q, opts):
+    """The i18n block of a question, or None when it has no translation."""
+    if q.startswith(PRINTS):
+        code = q[len(PRINTS):]
+        return {l: {'q': STEM_TR[l] + code, 'options': [OUTPUT_TR[l].get(o, o) for o in opts]} for l in LANGS_TR}
+    entry = TR.get(q)
+    if not entry:
+        return None
+    out = {}
+    for l in LANGS_TR:
+        tq, topts = entry[l]
+        if len(topts) != 4 or len({o.strip() for o in topts}) != 4:
+            errors.append(f'{where}: bad {l} options: {q}')
+        out[l] = {'q': tq, 'options': topts}
+    return out
+
+
 def run_js(code):
     import subprocess
     return subprocess.run(['node', '-e', code], capture_output=True, text=True, check=True).stdout.strip()
@@ -608,6 +704,11 @@ def build_item(where, item, difficulty=None):
     out = {'q': q, 'options': opts, 'correct': correct}
     if difficulty:
         out['difficulty'] = difficulty
+    tr = translate(where, q, opts)
+    if tr:
+        out['i18n'] = tr
+    elif SUBTOPICS.get(where.split('.')[0]):
+        errors.append(f'{where}: no ru/en translation for {q!r}')
     return out
 
 
